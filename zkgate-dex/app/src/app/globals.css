@@ -6,6 +6,28 @@
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 10, 10, 20;
   --background-end-rgb: 20, 20, 40;
+
+  /* DEX Color Palette for post-login */
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #18181b;
+  --bg-elevated: #1f1f23;
+  --bg-input: #27272a;
+
+  --border-primary: #27272a;
+  --border-secondary: #3f3f46;
+  --border-accent: #22d3ee33;
+
+  --accent-primary: #22d3ee;
+  --accent-secondary: #a78bfa;
+  --accent-gradient: linear-gradient(135deg, #22d3ee 0%, #a78bfa 100%);
+
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error: #f87171;
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 }
 
 body {
@@ -15,6 +37,23 @@ body {
   background-position: center;
   background-attachment: fixed;
   min-height: 100vh;
+}
+
+/* Post-login DEX body style */
+body.dex-mode {
+  background: var(--bg-primary);
+}
+
+/* Glassmorphic Panel Style */
+.glass-panel {
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* Wallet adapter button styles */
@@ -69,11 +108,11 @@ body {
 }
 
 .wallet-adapter-modal-list {
-  margin: 10px !important;  
+  margin: 10px !important;
   margin-left: 0 !important;
   padding: 2px !important;
   gap: 10px !important;
-  
+
 }
 
 .wallet-adapter-modal-list .wallet-adapter-button {
@@ -120,4 +159,61 @@ html {
 ::selection {
   background: rgba(255, 255, 255, 0.2);
   color: white;
+}
+
+/* DEX Component Utilities (for post-login) */
+.dex-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: 16px;
+}
+
+.dex-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease;
+}
+
+.dex-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+.dex-button-primary {
+  background: var(--accent-gradient);
+  color: #0d0d0f;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: all 0.15s ease;
+}
+
+.dex-button-primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.dex-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Custom scrollbar for DEX */
+.dex-mode ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dex-mode ::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+.dex-mode ::-webkit-scrollbar-thumb {
+  background: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.dex-mode ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }

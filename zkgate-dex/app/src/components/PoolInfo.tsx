@@ -19,6 +19,7 @@ export function PoolInfo() {
   const [poolData, setPoolData] = useState<PoolData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAddresses, setShowAddresses] = useState(false);
 
   const fetchPoolData = useCallback(async () => {
     if (!program || !poolPda || !poolConfig) {
@@ -28,22 +29,19 @@ export function PoolInfo() {
 
     try {
       setError(null);
-
-      // Fetch pool account data from on-chain
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pool = await (program.account as any).pool.fetch(poolPda);
 
       setPoolData({
         tokenAReserve: pool.tokenAReserve.toNumber() / 1e9,
         tokenBReserve: pool.tokenBReserve.toNumber() / 1e9,
-        k: Number(pool.k.toString()) / 1e18, // k is u128, convert via string
+        k: Number(pool.k.toString()) / 1e18,
         totalFeesA: pool.totalFeesA.toNumber() / 1e9,
         totalFeesB: pool.totalFeesB.toNumber() / 1e9,
       });
     } catch (err) {
       console.error('Error fetching pool data:', err);
 
-      // Try to get reserve balances directly if pool account fetch fails
       if (poolConfig) {
         try {
           const reserveA = await getAccount(connection, poolConfig.tokenAReserve);
@@ -57,7 +55,7 @@ export function PoolInfo() {
             totalFeesB: 0,
           });
         } catch {
-          setError('Pool not found. Have you created it?');
+          setError('Pool not found');
         }
       }
     } finally {
@@ -67,20 +65,18 @@ export function PoolInfo() {
 
   useEffect(() => {
     fetchPoolData();
-    // Refresh every 15 seconds
     const interval = setInterval(fetchPoolData, 15000);
     return () => clearInterval(interval);
   }, [fetchPoolData]);
 
   if (!poolConfig) {
     return (
-      <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold mb-4">Pool Info</h2>
-        <div className="text-yellow-400 text-sm p-4 bg-yellow-900/20 rounded-lg">
-          <p className="font-semibold mb-2">⚠️ Not Configured</p>
-          <p className="text-gray-400 text-xs">
-            Configure environment variables to connect to a pool.
-          </p>
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
+          Pool Info
+        </h2>
+        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)', border: '1px solid var(--warning)' }}>
+          <p className="text-xs" style={{ color: 'var(--warning)' }}>Not configured</p>
         </div>
       </div>
     );
@@ -88,127 +84,159 @@ export function PoolInfo() {
 
   if (loading) {
     return (
-      <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold mb-6">Pool Info</h2>
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-700 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-          <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--text-muted)' }}>
+          Pool Info
+        </h2>
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-12 rounded-xl animate-pulse" style={{ background: 'var(--bg-input)' }} />
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Pool Info</h2>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          Pool Info
+        </h2>
         <button
           onClick={fetchPoolData}
-          className="text-xs text-gray-400 hover:text-purple-400 transition-colors"
+          className="text-xs transition-colors"
+          style={{ color: 'var(--text-muted)' }}
         >
-          ↻ Refresh
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-900/30 border border-red-500/30 rounded-lg text-red-300 text-sm">
+        <div className="mb-4 p-3 rounded-xl text-xs" style={{ background: 'rgba(248, 113, 113, 0.1)', color: 'var(--error)' }}>
           {error}
         </div>
       )}
 
-      {poolData ? (
+      {poolData && (
         <div className="space-y-4">
+          {/* Token Pair */}
+          <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full" style={{ background: 'var(--accent-primary)' }} />
+              <div className="w-6 h-6 rounded-full -ml-3" style={{ background: 'var(--accent-secondary)' }} />
+              <span className="font-medium ml-1" style={{ color: 'var(--text-primary)' }}>A / B</span>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Constant Product AMM</p>
+          </div>
+
           {/* Reserves */}
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <h3 className="text-sm text-gray-400 mb-3">Reserves</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Token A</span>
-                <span className="font-mono text-purple-400">
-                  {poolData.tokenAReserve.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                </span>
+          <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Reserves</p>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span style={{ color: 'var(--text-secondary)' }}>Token A</span>
+                  <span className="font-mono" style={{ color: 'var(--accent-primary)' }}>
+                    {poolData.tokenAReserve.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      background: 'var(--accent-primary)',
+                      width: `${Math.min(100, (poolData.tokenAReserve / (poolData.tokenAReserve + poolData.tokenBReserve)) * 100)}%`
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Token B</span>
-                <span className="font-mono text-pink-400">
-                  {poolData.tokenBReserve.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                </span>
+
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span style={{ color: 'var(--text-secondary)' }}>Token B</span>
+                  <span className="font-mono" style={{ color: 'var(--accent-secondary)' }}>
+                    {poolData.tokenBReserve.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      background: 'var(--accent-secondary)',
+                      width: `${Math.min(100, (poolData.tokenBReserve / (poolData.tokenAReserve + poolData.tokenBReserve)) * 100)}%`
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Price */}
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <h3 className="text-sm text-gray-400 mb-3">Price</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-300">A per B</span>
-                <span className="font-mono">
-                  {poolData.tokenBReserve > 0
-                    ? (poolData.tokenAReserve / poolData.tokenBReserve).toFixed(4)
-                    : '—'}
-                </span>
+          <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+            <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Price</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                <p className="text-lg font-mono" style={{ color: 'var(--text-primary)' }}>
+                  {poolData.tokenBReserve > 0 ? (poolData.tokenAReserve / poolData.tokenBReserve).toFixed(4) : '—'}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>A per B</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">B per A</span>
-                <span className="font-mono">
-                  {poolData.tokenAReserve > 0
-                    ? (poolData.tokenBReserve / poolData.tokenAReserve).toFixed(4)
-                    : '—'}
-                </span>
+              <div className="text-center p-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                <p className="text-lg font-mono" style={{ color: 'var(--text-primary)' }}>
+                  {poolData.tokenAReserve > 0 ? (poolData.tokenBReserve / poolData.tokenAReserve).toFixed(4) : '—'}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>B per A</p>
               </div>
             </div>
           </div>
 
-          {/* Fees Collected */}
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <h3 className="text-sm text-gray-400 mb-3">Fees Collected</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-300">Token A</span>
-                <span className="font-mono text-green-400">
-                  {poolData.totalFeesA.toFixed(4)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-300">Token B</span>
-                <span className="font-mono text-green-400">
-                  {poolData.totalFeesB.toFixed(4)}
-                </span>
-              </div>
+          {/* Fees */}
+          <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+            <div className="flex justify-between items-center">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Fee Tier</p>
+              <span className="text-sm font-medium" style={{ color: 'var(--success)' }}>0.3%</span>
             </div>
+            {(poolData.totalFeesA > 0 || poolData.totalFeesB > 0) && (
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
+                <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Collected</p>
+                <div className="flex gap-4 text-xs">
+                  <span style={{ color: 'var(--text-secondary)' }}>A: <span style={{ color: 'var(--success)' }}>{poolData.totalFeesA.toFixed(4)}</span></span>
+                  <span style={{ color: 'var(--text-secondary)' }}>B: <span style={{ color: 'var(--success)' }}>{poolData.totalFeesB.toFixed(4)}</span></span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Pool Addresses */}
-          <div className="bg-gray-800/50 rounded-lg p-4">
-            <h3 className="text-sm text-gray-400 mb-3">Pool Addresses</h3>
-            <div className="space-y-2 text-xs">
+          {/* Addresses */}
+          <button
+            onClick={() => setShowAddresses(!showAddresses)}
+            className="w-full text-xs py-2 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {showAddresses ? 'Hide' : 'Show'} addresses
+          </button>
+
+          {showAddresses && (
+            <div className="p-4 rounded-xl space-y-2 text-xs" style={{ background: 'var(--bg-input)' }}>
               <div>
-                <span className="text-gray-500">Pool PDA:</span>
-                <p className="font-mono text-gray-300 truncate">
+                <p style={{ color: 'var(--text-muted)' }}>Pool</p>
+                <p className="font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                   {poolConfig.poolPda.toBase58()}
                 </p>
               </div>
               <div>
-                <span className="text-gray-500">Program:</span>
-                <p className="font-mono text-gray-300 truncate">
+                <p style={{ color: 'var(--text-muted)' }}>Program</p>
+                <p className="font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                   {poolConfig.programId.toBase58()}
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* AMM Info */}
-          <div className="text-xs text-gray-500 mt-4">
-            <p>AMM: Constant Product (x * y = k)</p>
-            <p>Fee: 0.3% per swap</p>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-8 text-gray-400">
-          <p>No pool data available</p>
-          <p className="text-sm mt-2">Create a pool first</p>
+          )}
         </div>
       )}
     </div>

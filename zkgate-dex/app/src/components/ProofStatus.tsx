@@ -6,101 +6,42 @@ interface ProofStatusProps {
 
 export function ProofStatus({ proofGenerated }: ProofStatusProps) {
   return (
-    <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-      <h2 className="text-xl font-semibold mb-6">ZK Proof Status</h2>
-
-      <div className="space-y-4">
-        {/* Proof Generation Status */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-3">
+    <div className="px-6 py-4">
+      <div className="flex items-center justify-between">
+        {/* Left - Status */}
+        <div className="flex items-center gap-6">
+          {/* Proof Status */}
+          <div className="flex items-center gap-2">
             <div
-              className={`w-3 h-3 rounded-full ${
-                proofGenerated ? 'bg-green-500' : 'bg-gray-500'
-              }`}
+              className={`w-2 h-2 rounded-full ${proofGenerated ? 'animate-pulse' : ''}`}
+              style={{ background: proofGenerated ? 'var(--success)' : 'var(--text-muted)' }}
             />
-            <span className="text-sm font-medium">
-              {proofGenerated ? 'Proof Generated' : 'Awaiting Proof'}
+            <span className="text-sm" style={{ color: proofGenerated ? 'var(--success)' : 'var(--text-secondary)' }}>
+              {proofGenerated ? 'Proof Ready' : 'Awaiting Proof'}
             </span>
           </div>
-          <p className="text-xs text-gray-400">
-            {proofGenerated
-              ? 'Your ZK proof is ready. You can now execute swaps.'
-              : 'Generate a proof to verify your eligibility for trading.'}
-          </p>
-        </div>
 
-        {/* Circuit Info */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h3 className="text-sm text-gray-400 mb-3">Circuit: min_balance</h3>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Type</span>
-              <span className="text-purple-400">Groth16</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Curve</span>
-              <span className="text-purple-400">BN254</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Verifier</span>
-              <span className="text-purple-400">Sunspot</span>
-            </div>
+          {/* Divider */}
+          <div className="h-4 w-px" style={{ background: 'var(--border-primary)' }} />
+
+          {/* Circuit Info */}
+          <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>Circuit: <span style={{ color: 'var(--accent-secondary)' }}>min_balance</span></span>
+            <span>•</span>
+            <span>Groth16 / BN254</span>
+            <span>•</span>
+            <span>Sunspot Verifier</span>
           </div>
         </div>
 
-        {/* What's Being Proven */}
-        <div className="bg-gray-800/50 rounded-lg p-4">
-          <h3 className="text-sm text-gray-400 mb-3">What You're Proving</h3>
-          <ul className="space-y-2 text-xs text-gray-300">
-            <li className="flex items-start gap-2">
-              <span className="text-green-400 mt-0.5">✓</span>
-              <span>Your balance meets the minimum threshold</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-400 mt-0.5">✓</span>
-              <span>Without revealing your actual balance</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-green-400 mt-0.5">✓</span>
-              <span>Proof is verified on-chain</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Privacy Notice */}
-        <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-4">
-          <h3 className="text-sm text-purple-400 mb-2">Privacy Preserved</h3>
-          <p className="text-xs text-gray-400">
-            Your actual token balance remains private. Only the validity of
-            your proof (that balance ≥ threshold) is verified on-chain.
-          </p>
-        </div>
-
-        {/* Available Circuits */}
-        <div className="mt-6">
-          <h3 className="text-sm text-gray-400 mb-3">Available Circuits</h3>
-          <div className="space-y-2">
-            <CircuitBadge name="min_balance" active />
-            <CircuitBadge name="token_holder" />
-            <CircuitBadge name="smt_exclusion" />
-          </div>
+        {/* Right - Privacy Badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(167, 139, 250, 0.1)' }}>
+          <svg className="w-4 h-4" style={{ color: 'var(--accent-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className="text-xs font-medium" style={{ color: 'var(--accent-secondary)' }}>Privacy Preserved</span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CircuitBadge({ name, active = false }: { name: string; active?: boolean }) {
-  return (
-    <div
-      className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs ${
-        active
-          ? 'bg-purple-600/20 border border-purple-500/50 text-purple-300'
-          : 'bg-gray-800/50 border border-gray-700 text-gray-400'
-      }`}
-    >
-      <span>{name}</span>
-      {active && <span className="text-green-400">Active</span>}
     </div>
   );
 }

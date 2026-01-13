@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
-import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, getAccount, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { useZKProof } from '@/hooks/useZKProof';
 import { useProgram } from '@/hooks/useProgram';
@@ -13,6 +12,9 @@ interface SwapInterfaceProps {
   proofGenerated: boolean;
 }
 
+// Default slippage tolerance: 0.5%
+const DEFAULT_SLIPPAGE = 0.9;
+
 export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfaceProps) {
   const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
@@ -20,33 +22,30 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
   const { program, poolPda, poolConfig } = useProgram();
 
   const [amountIn, setAmountIn] = useState<string>('');
-  const [minOut, setMinOut] = useState<string>('');
+  const [slippage, setSlippage] = useState<number>(DEFAULT_SLIPPAGE);
   const [swapDirection, setSwapDirection] = useState<'AtoB' | 'BtoA'>('AtoB');
   const [isSwapping, setIsSwapping] = useState(false);
   const [txSignature, setTxSignature] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // User token balances
   const [balanceA, setBalanceA] = useState<number>(0);
   const [balanceB, setBalanceB] = useState<number>(0);
 
-  // Fetch user token balances
+  // Pool reserves for price calculation
+  const [reserveA, setReserveA] = useState<number>(0);
+  const [reserveB, setReserveB] = useState<number>(0);
+
+  // Fetch user token balances and pool reserves
   useEffect(() => {
-    async function fetchBalances() {
+    async function fetchData() {
       if (!publicKey || !poolConfig) return;
 
       try {
-        // Get user's ATAs
-        const userAtaA = await getAssociatedTokenAddress(
-          poolConfig.tokenAMint,
-          publicKey
-        );
-        const userAtaB = await getAssociatedTokenAddress(
-          poolConfig.tokenBMint,
-          publicKey
-        );
+        const userAtaA = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
+        const userAtaB = await getAssociatedTokenAddress(poolConfig.tokenBMint, publicKey);
 
-        // Fetch balances
         try {
           const accountA = await getAccount(connection, userAtaA);
           setBalanceA(Number(accountA.amount) / 1e9);
@@ -60,18 +59,70 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
         } catch {
           setBalanceB(0);
         }
+
+        // Fetch pool reserves from Pool account state (MUST match what on-chain program uses)
+        // The on-chain program uses pool.token_a_reserve and pool.token_b_reserve for AMM calculations,
+        // NOT the actual token account balances!
+        try {
+          if (program && poolConfig.poolPda) {
+            // Fetch the Pool account state directly
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const poolAccount = await (program.account as any).pool.fetch(poolConfig.poolPda);
+            setReserveA(Number(poolAccount.tokenAReserve) / 1e9);
+            setReserveB(Number(poolAccount.tokenBReserve) / 1e9);
+          }
+        } catch (e) {
+          console.error('Error fetching pool reserves:', e);
+          // Pool not initialized
+        }
       } catch (err) {
-        console.error('Error fetching balances:', err);
+        console.error('Error fetching data:', err);
       }
     }
 
-    fetchBalances();
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchBalances, 10000);
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
-  }, [publicKey, poolConfig, connection]);
+  }, [publicKey, poolConfig, connection, program]);
 
-  // Generate ZK proof for eligibility
+  // Calculate estimated output using constant product formula
+  // Must match on-chain formula exactly: output = (997 * input * reserveOut) / (1000 * reserveIn + 997 * input)
+  const estimatedOutput = useMemo(() => {
+    const inputAmount = parseFloat(amountIn) || 0;
+    if (inputAmount <= 0 || reserveA <= 0 || reserveB <= 0) return 0;
+
+    // Apply 0.3% fee using integer math like on-chain (997/1000)
+    const amountInWithFee = inputAmount * 997;
+
+    if (swapDirection === 'AtoB') {
+      // Selling Token A for Token B
+      const numerator = amountInWithFee * reserveB;
+      const denominator = (reserveA * 1000) + amountInWithFee;
+      return numerator / denominator;
+    } else {
+      // Selling Token B for Token A
+      const numerator = amountInWithFee * reserveA;
+      const denominator = (reserveB * 1000) + amountInWithFee;
+      return numerator / denominator;
+    }
+  }, [amountIn, reserveA, reserveB, swapDirection]);
+
+  // Minimum output with slippage
+  const minOutput = useMemo(() => {
+    return estimatedOutput * (1 - slippage / 100);
+  }, [estimatedOutput, slippage]);
+
+  // Price impact
+  const priceImpact = useMemo(() => {
+    const inputAmount = parseFloat(amountIn) || 0;
+    if (inputAmount <= 0 || estimatedOutput <= 0) return 0;
+
+    const currentPrice = swapDirection === 'AtoB' ? reserveB / reserveA : reserveA / reserveB;
+    const executionPrice = estimatedOutput / inputAmount;
+    const impact = ((currentPrice - executionPrice) / currentPrice) * 100;
+    return Math.abs(impact);
+  }, [amountIn, estimatedOutput, reserveA, reserveB, swapDirection]);
+
   const handleGenerateProof = useCallback(async () => {
     if (!publicKey) {
       setError('Connect wallet first');
@@ -79,34 +130,27 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
     }
 
     if (!isInitialized) {
-      setError('ZK system initializing... please wait');
+      setError('ZK system initializing...');
       return;
     }
 
     try {
       setError(null);
-      // Prove balance >= threshold
-      // Use actual token balance for proof
       const userBalance = Math.floor((swapDirection === 'AtoB' ? balanceA : balanceB) * 1000);
-      const threshold = 1000; // Minimum 1 token (in millitokens)
+      const threshold = 1000;
 
       if (userBalance < threshold) {
         setError(`Insufficient balance. Need at least ${threshold / 1000} tokens.`);
         return;
       }
 
-      await generateProof({
-        balance: userBalance,
-        threshold: threshold,
-      });
-
+      await generateProof({ balance: userBalance, threshold });
       onProofGenerated();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate proof');
     }
   }, [publicKey, isInitialized, generateProof, onProofGenerated, balanceA, balanceB, swapDirection]);
 
-  // Execute the ZK-verified swap
   const handleSwap = useCallback(async () => {
     if (!publicKey || !signTransaction || !program || !proof || !poolConfig) {
       setError('Missing requirements for swap');
@@ -119,29 +163,11 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
     try {
       const amountInLamports = new BN(Math.floor(parseFloat(amountIn) * 1e9));
-      const minOutLamports = new BN(Math.floor(parseFloat(minOut || '0') * 1e9));
+      const minOutLamports = new BN(Math.floor(minOutput * 1e9));
 
-      // Compute user's ATAs
-      const userTokenA = await getAssociatedTokenAddress(
-        poolConfig.tokenAMint,
-        publicKey
-      );
-      const userTokenB = await getAssociatedTokenAddress(
-        poolConfig.tokenBMint,
-        publicKey
-      );
+      const userTokenA = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
+      const userTokenB = await getAssociatedTokenAddress(poolConfig.tokenBMint, publicKey);
 
-      console.log('Swap accounts:', {
-        pool: poolConfig.poolPda.toBase58(),
-        userTokenA: userTokenA.toBase58(),
-        userTokenB: userTokenB.toBase58(),
-        tokenAReserve: poolConfig.tokenAReserve.toBase58(),
-        tokenBReserve: poolConfig.tokenBReserve.toBase58(),
-        verifierProgram: poolConfig.verifierProgramId.toBase58(),
-        verifierState: poolConfig.verifierState.toBase58(),
-      });
-
-      // Build the swap instruction (use snake_case method names from IDL)
       const methodName = swapDirection === 'AtoB' ? 'zkSwap' : 'zkSwapReverse';
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,20 +190,12 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
         })
         .transaction();
 
-      // Add compute budget instructions for Groth16 verification
-      // The gnark verifier uses ~200k CUs, so we request 500k total
       const { ComputeBudgetProgram } = await import('@solana/web3.js');
-      const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-        units: 500_000,
-      });
-      const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-        microLamports: 1_000,
-      });
+      const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({ units: 500_000 });
+      const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000 });
 
-      // Prepend compute budget instructions to transaction
       tx.instructions.unshift(modifyComputeUnits, addPriorityFee);
 
-      // Sign and send
       const { blockhash } = await connection.getLatestBlockhash();
       tx.recentBlockhash = blockhash;
       tx.feePayer = publicKey;
@@ -187,159 +205,241 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
       await connection.confirmTransaction(signature, 'confirmed');
       setTxSignature(signature);
+      setAmountIn('');
     } catch (err) {
       console.error('Swap error:', err);
       setError(err instanceof Error ? err.message : 'Swap failed');
     } finally {
       setIsSwapping(false);
     }
-  }, [publicKey, signTransaction, program, proof, amountIn, minOut, poolConfig, connection, swapDirection]);
+  }, [publicKey, signTransaction, program, proof, amountIn, minOutput, poolConfig, connection, swapDirection]);
 
-  // Check if pool is configured
+  const fromToken = swapDirection === 'AtoB' ? 'Token A' : 'Token B';
+  const toToken = swapDirection === 'AtoB' ? 'Token B' : 'Token A';
+  const fromBalance = swapDirection === 'AtoB' ? balanceA : balanceB;
+  const toBalance = swapDirection === 'AtoB' ? balanceB : balanceA;
+
+  const setMaxAmount = () => {
+    setAmountIn(fromBalance.toString());
+  };
+
+  const flipDirection = () => {
+    setSwapDirection(prev => prev === 'AtoB' ? 'BtoA' : 'AtoB');
+    setAmountIn('');
+  };
+
   if (!poolConfig) {
     return (
-      <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-        <h2 className="text-xl font-semibold mb-4">ZK Swap</h2>
-        <div className="text-yellow-400 text-sm p-4 bg-yellow-900/20 rounded-lg">
-          <p className="font-semibold mb-2">⚠️ Pool Not Configured</p>
-          <p className="text-gray-400">
-            Set the following environment variables in <code>.env.local</code>:
+      <div>
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Swap</h2>
+        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)', border: '1px solid var(--warning)' }}>
+          <p className="text-sm font-medium mb-2" style={{ color: 'var(--warning)' }}>⚠️ Pool Not Configured</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Configure environment variables to connect.
           </p>
-          <ul className="text-xs mt-2 space-y-1 text-gray-500">
-            <li>NEXT_PUBLIC_TOKEN_A_MINT</li>
-            <li>NEXT_PUBLIC_TOKEN_B_MINT</li>
-            <li>NEXT_PUBLIC_POOL_PDA</li>
-            <li>NEXT_PUBLIC_TOKEN_A_RESERVE</li>
-            <li>NEXT_PUBLIC_TOKEN_B_RESERVE</li>
-          </ul>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900/80 rounded-2xl p-6 border border-gray-800">
-      <h2 className="text-xl font-semibold mb-6">ZK Swap</h2>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Swap</h2>
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="p-2 rounded-lg transition-colors"
+          style={{ background: showSettings ? 'var(--bg-elevated)' : 'var(--bg-input)', color: 'var(--text-secondary)' }}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="mb-4 p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Slippage Tolerance</p>
+          <div className="flex gap-2">
+            {[0.1, 0.5, 1.0].map((val) => (
+              <button
+                key={val}
+                onClick={() => setSlippage(val)}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                style={{
+                  background: slippage === val ? 'var(--accent-primary)' : 'var(--bg-elevated)',
+                  color: slippage === val ? '#0d0d0f' : 'var(--text-secondary)'
+                }}
+              >
+                {val}%
+              </button>
+            ))}
+            <div className="flex items-center gap-1 px-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+              <input
+                type="number"
+                value={slippage}
+                onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
+                className="w-12 bg-transparent text-sm text-right outline-none"
+                style={{ color: 'var(--text-primary)' }}
+              />
+              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ZK System Status */}
       {!isInitialized && (
-        <div className="mb-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg text-blue-300 text-sm">
+        <div className="mb-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(34, 211, 238, 0.1)', border: '1px solid rgba(34, 211, 238, 0.3)', color: 'var(--accent-primary)' }}>
           Initializing ZK proof system...
         </div>
       )}
 
-      {/* Token Balances */}
-      <div className="mb-4 grid grid-cols-2 gap-4">
-        <div className="bg-gray-800/50 rounded-lg p-3">
-          <p className="text-xs text-gray-400">Token A Balance</p>
-          <p className="text-lg font-mono text-purple-400">{balanceA.toFixed(4)}</p>
+      {/* You Pay Section */}
+      <div className="rounded-xl p-4 mb-2" style={{ background: 'var(--bg-input)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>You pay</span>
+          <button
+            onClick={setMaxAmount}
+            className="text-xs font-medium transition-colors hover:opacity-80"
+            style={{ color: 'var(--accent-primary)' }}
+          >
+            Balance: {fromBalance.toFixed(4)} (Max)
+          </button>
         </div>
-        <div className="bg-gray-800/50 rounded-lg p-3">
-          <p className="text-xs text-gray-400">Token B Balance</p>
-          <p className="text-lg font-mono text-pink-400">{balanceB.toFixed(4)}</p>
+        <div className="flex items-center gap-4">
+          <input
+            type="number"
+            value={amountIn}
+            onChange={(e) => setAmountIn(e.target.value)}
+            placeholder="0"
+            className="flex-1 bg-transparent text-2xl font-medium outline-none"
+            style={{ color: 'var(--text-primary)' }}
+          />
+          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
+            {fromToken}
+          </div>
         </div>
       </div>
 
-      {/* Direction Toggle */}
-      <div className="flex gap-2 mb-6">
+      {/* Flip Button */}
+      <div className="flex justify-center -my-3 relative z-10">
         <button
-          onClick={() => setSwapDirection('AtoB')}
-          className={`flex-1 py-2 rounded-lg transition-colors ${swapDirection === 'AtoB'
-            ? 'bg-purple-600 text-white'
-            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
+          onClick={flipDirection}
+          className="p-2 rounded-xl border transition-all hover:scale-110"
+          style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
         >
-          Token A → B
-        </button>
-        <button
-          onClick={() => setSwapDirection('BtoA')}
-          className={`flex-1 py-2 rounded-lg transition-colors ${swapDirection === 'BtoA'
-            ? 'bg-purple-600 text-white'
-            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-        >
-          Token B → A
+          <svg className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
         </button>
       </div>
 
-      {/* Input Amount */}
-      <div className="mb-4">
-        <label className="block text-sm text-gray-400 mb-2">Amount In</label>
-        <input
-          type="number"
-          value={amountIn}
-          onChange={(e) => setAmountIn(e.target.value)}
-          placeholder="0.0"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-purple-500"
-        />
+      {/* You Receive Section */}
+      <div className="rounded-xl p-4 mt-2" style={{ background: 'var(--bg-input)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>You receive</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Balance: {toBalance.toFixed(4)}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex-1 text-2xl font-medium" style={{ color: estimatedOutput > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            {estimatedOutput > 0 ? estimatedOutput.toFixed(6) : '0'}
+          </div>
+          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
+            {toToken}
+          </div>
+        </div>
       </div>
 
-      {/* Min Output */}
-      <div className="mb-6">
-        <label className="block text-sm text-gray-400 mb-2">
-          Minimum Output (slippage protection)
-        </label>
-        <input
-          type="number"
-          value={minOut}
-          onChange={(e) => setMinOut(e.target.value)}
-          placeholder="0.0"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-lg focus:outline-none focus:border-purple-500"
-        />
-      </div>
-
-      {/* Step 1: Generate Proof */}
-      {!proofGenerated && (
-        <button
-          onClick={handleGenerateProof}
-          disabled={isGenerating || !isInitialized}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all mb-4"
-        >
-          {isGenerating ? (
-            <span className="flex items-center justify-center gap-2">
-              <LoadingSpinner />
-              Generating ZK Proof...
+      {/* Swap Details */}
+      {parseFloat(amountIn) > 0 && estimatedOutput > 0 && (
+        <div className="mt-4 p-3 rounded-xl text-xs space-y-2" style={{ background: 'var(--bg-input)' }}>
+          <div className="flex justify-between">
+            <span style={{ color: 'var(--text-muted)' }}>Rate</span>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              1 {fromToken} = {(estimatedOutput / parseFloat(amountIn)).toFixed(6)} {toToken}
             </span>
-          ) : (
-            'Step 1: Generate ZK Proof'
-          )}
-        </button>
+          </div>
+          <div className="flex justify-between">
+            <span style={{ color: 'var(--text-muted)' }}>Minimum received</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{minOutput.toFixed(6)} {toToken}</span>
+          </div>
+          <div className="flex justify-between">
+            <span style={{ color: 'var(--text-muted)' }}>Price impact</span>
+            <span style={{ color: priceImpact > 5 ? 'var(--warning)' : 'var(--text-secondary)' }}>
+              {priceImpact.toFixed(2)}%
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span style={{ color: 'var(--text-muted)' }}>Slippage tolerance</span>
+            <span style={{ color: 'var(--text-secondary)' }}>{slippage}%</span>
+          </div>
+        </div>
       )}
 
-      {/* Step 2: Execute Swap */}
-      {proofGenerated && (
-        <button
-          onClick={handleSwap}
-          disabled={isSwapping || !amountIn}
-          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all"
-        >
-          {isSwapping ? (
-            <span className="flex items-center justify-center gap-2">
-              <LoadingSpinner />
-              Executing Swap...
-            </span>
-          ) : (
-            'Step 2: Execute ZK Swap'
-          )}
-        </button>
-      )}
+      {/* Action Buttons */}
+      <div className="mt-6">
+        {!proofGenerated ? (
+          <button
+            onClick={handleGenerateProof}
+            disabled={isGenerating || !isInitialized}
+            className="w-full py-4 rounded-xl font-semibold text-base transition-all dex-button-primary"
+          >
+            {isGenerating ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner />
+                Generating ZK Proof...
+              </span>
+            ) : (
+              'Generate ZK Proof'
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={handleSwap}
+            disabled={isSwapping || !amountIn || parseFloat(amountIn) <= 0}
+            className="w-full py-4 rounded-xl font-semibold text-base transition-all"
+            style={{
+              background: 'var(--success)',
+              color: '#0d0d0f',
+              opacity: isSwapping || !amountIn || parseFloat(amountIn) <= 0 ? 0.5 : 1,
+              cursor: isSwapping || !amountIn || parseFloat(amountIn) <= 0 ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {isSwapping ? (
+              <span className="flex items-center justify-center gap-2">
+                <LoadingSpinner />
+                Swapping...
+              </span>
+            ) : (
+              'Swap'
+            )}
+          </button>
+        )}
+      </div>
 
       {/* Error Display */}
       {(error || proofError) && (
-        <div className="mt-4 p-3 bg-red-900/50 border border-red-500/50 rounded-lg text-red-300 text-sm">
+        <div className="mt-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.3)', color: 'var(--error)' }}>
           {error || proofError}
         </div>
       )}
 
       {/* Success Display */}
       {txSignature && (
-        <div className="mt-4 p-3 bg-green-900/50 border border-green-500/50 rounded-lg">
-          <p className="text-green-300 text-sm mb-2">Swap successful!</p>
+        <div className="mt-4 p-3 rounded-xl" style={{ background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+          <p className="text-sm mb-2" style={{ color: 'var(--success)' }}>Swap successful!</p>
           <a
             href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-purple-400 hover:text-purple-300 text-xs break-all"
+            className="text-xs break-all"
+            style={{ color: 'var(--accent-primary)' }}
           >
             View on Explorer →
           </a>
@@ -351,25 +451,9 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
 function LoadingSpinner() {
   return (
-    <svg
-      className="animate-spin h-5 w-5"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      />
+    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
     </svg>
   );
 }

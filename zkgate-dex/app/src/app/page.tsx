@@ -7,6 +7,7 @@ import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SwapInterface } from '@/components/SwapInterface';
 import { PoolInfo } from '@/components/PoolInfo';
 import { ProofStatus } from '@/components/ProofStatus';
+import Image from 'next/image';
 
 export default function Home() {
   const { publicKey, connected } = useWallet();
@@ -32,98 +33,140 @@ export default function Home() {
   }, [connected, publicKey, fetchBalance]);
 
   return (
-    <main className="min-h-screen p-8">
-      {/* Header */}
-      <header className="flex justify-between items-center mb-12">
-        <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
-            ZKGate DEX
-          </h1>
-          <p className="text-gray-400 mt-2">
-            Zero-Knowledge Gated Trading on Solana
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          {connected && (
-            <div className="text-right mr-4">
-              <p className="text-sm text-gray-400">Balance</p>
-              <p className="text-lg font-semibold">{balance.toFixed(4)} SOL</p>
-            </div>
-          )}
-          <WalletMultiButton />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto">
-        {!connected ? (
-          <div className="text-center py-20">
-            <div className="bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-2xl p-12 border border-purple-500/20">
-              <h2 className="text-2xl font-semibold mb-4">
-                Connect Your Wallet
-              </h2>
-              <p className="text-gray-400 mb-8 max-w-md mx-auto">
-                Connect your Solana wallet to access ZK-gated trading. 
-                Prove your eligibility without revealing your holdings.
-              </p>
-              <WalletMultiButton />
-            </div>
+    <main className="min-h-screen relative">
+      {/* Hero Section */}
+      <div className="min-h-screen flex flex-col">
+        {/* Header with Wallet */}
+        <header className="px-8 pt-8 pb-4 flex justify-end items-start">
+          <div className="flex items-center gap-6">
+            {connected && (
+              <div className="text-right">
+                <p className="text-sm text-white/50 font-light mb-1">Balance</p>
+                <p className="text-xl text-white/90 font-normal">{balance.toFixed(4)} SOL</p>
+              </div>
+            )}
+            <WalletMultiButton />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Pool Info */}
-            <div className="lg:col-span-1">
-              <PoolInfo />
-            </div>
+        </header>
 
-            {/* Center Column - Swap Interface */}
-            <div className="lg:col-span-1">
-              <SwapInterface 
-                onProofGenerated={() => setProofGenerated(true)}
-                proofGenerated={proofGenerated}
-              />
-            </div>
+        {/* Main Hero Content */}
+        <div className="flex-1 flex items-center px-8 pb-20">
+          <div className="w-full max-w-7xl mx-auto">
+            {!connected ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Left Side - Title and Tagline */}
+                <div className="space-y-6">
+                  <h1 className="text-7xl md:text-8xl lg:text-9xl font-normal tracking-tight text-white/95">
+                    Shadow
+                  </h1>
+                  <p className="text-xl md:text-2xl text-white/70 font-light leading-relaxed max-w-2xl">
+                    The first privacy-preserving DEX on Solana where you prove eligibility without revealing yourself
+                  </p>
 
-            {/* Right Column - Proof Status */}
-            <div className="lg:col-span-1">
-              <ProofStatus proofGenerated={proofGenerated} />
-            </div>
+                  {/* Built Using Section */}
+                  <div className="pt-8">
+                    <p className="text-sm text-white/50 font-light mb-4 uppercase tracking-wider">Built Using</p>
+                    <div className="flex items-center gap-8">
+                      <div className="relative w-24 h-24 opacity-80 hover:opacity-100 transition-opacity">
+                        <Image
+                          src="/noir-logo.png"
+                          alt="Noir"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="relative w-24 h-24 opacity-80 hover:opacity-100 transition-opacity">
+                        <Image
+                          src="/solana-logo.png"
+                          alt="Solana"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div className="relative w-32 h-24 opacity-80 hover:opacity-100 transition-opacity">
+                        <Image
+                          src="/quicknode-logo.png"
+                          alt="QuickNode"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side - Connect Wallet Card */}
+                <div className="backdrop-blur-sm bg-white/5 rounded-3xl p-12 border border-white/10 shadow-2xl">
+                  <h2 className="text-3xl font-normal text-white/95 mb-6 tracking-tight">
+                    Connect Your Wallet
+                  </h2>
+                  <p className="text-lg text-white/60 mb-10 font-light leading-relaxed">
+                    Access privacy-preserving trading on Solana. Prove your eligibility without revealing your holdings.
+                  </p>
+                  <WalletMultiButton />
+                </div>
+              </div>
+            ) : (
+              <div className="w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Pool Info */}
+                  <div className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10">
+                    <PoolInfo />
+                  </div>
+
+                  {/* Swap Interface */}
+                  <div className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10">
+                    <SwapInterface
+                      onProofGenerated={() => setProofGenerated(true)}
+                      proofGenerated={proofGenerated}
+                    />
+                  </div>
+
+                  {/* Proof Status */}
+                  <div className="backdrop-blur-sm bg-white/5 rounded-2xl p-6 border border-white/10">
+                    <ProofStatus proofGenerated={proofGenerated} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Features Section */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FeatureCard
-            title="Privacy Preserving"
-            description="Prove you meet trading requirements without revealing your actual balance or holdings."
-          />
-          <FeatureCard
-            title="Noir Circuits"
-            description="Powered by Noir ZK circuits with Groth16 proofs verified on-chain via Sunspot."
-          />
-          <FeatureCard
-            title="Solana Speed"
-            description="Sub-second finality with low fees. ZK verification adds minimal overhead."
-          />
+        <div className="px-8 pb-16">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FeatureCard
+              title="Privacy Preserving"
+              description="Prove you meet trading requirements without revealing your actual balance or holdings."
+            />
+            <FeatureCard
+              title="Noir Circuits"
+              description="Powered by Noir ZK circuits with Groth16 proofs verified on-chain via Sunspot."
+            />
+            <FeatureCard
+              title="Solana Speed"
+              description="Sub-second finality with low fees. ZK verification adds minimal overhead."
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="mt-20 text-center text-gray-500 text-sm">
-        <p>ZKGate DEX - Built for Solana Devnet</p>
-        <p className="mt-1">
-          Powered by Noir v1.0.0-beta.18 | Anchor v0.32.1 | Sunspot
-        </p>
-      </footer>
+        {/* Footer */}
+        <footer className="px-8 pb-8 text-center">
+          <p className="text-white/40 text-sm font-light">Shadow DEX — Built for Solana Devnet</p>
+          <p className="text-white/30 text-xs mt-2 font-light">
+            Powered by Noir v1.0.0-beta.18 | Anchor v0.32.1 | Sunspot
+          </p>
+        </footer>
+      </div>
     </main>
   );
 }
 
 function FeatureCard({ title, description }: { title: string; description: string }) {
   return (
-    <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800 hover:border-purple-500/50 transition-colors">
-      <h3 className="text-lg font-semibold text-purple-400 mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm">{description}</p>
+    <div className="backdrop-blur-sm bg-white/5 rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300 hover:bg-white/[0.07]">
+      <h3 className="text-xl font-normal text-white/90 mb-3 tracking-tight">{title}</h3>
+      <p className="text-white/60 text-sm font-light leading-relaxed">{description}</p>
     </div>
   );
 }

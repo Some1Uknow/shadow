@@ -1,13 +1,17 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Instrument_Serif } from 'next/font/google';
 import './globals.css';
 import { WalletContextProvider } from '@/components/WalletProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+const instrumentSerif = Instrument_Serif({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'ZKGate DEX',
-  description: 'Zero-Knowledge Gated Decentralized Exchange on Solana',
+  title: 'Shadow DEX',
+  description: 'The first privacy-preserving DEX on Solana where you prove eligibility without revealing yourself',
 };
 
 export default function RootLayout({
@@ -17,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={instrumentSerif.className}>
         <WalletContextProvider>
           {children}
         </WalletContextProvider>

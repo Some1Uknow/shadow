@@ -1,0 +1,6 @@
+[package]
+name = "min_balance"
+type = "bin"
+authors = ["ZKGate DEX"]
+
+[dependencies]

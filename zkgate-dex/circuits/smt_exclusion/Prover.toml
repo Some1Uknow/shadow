@@ -1,0 +1,12 @@
+# Private inputs (witness)
+address = "0x1234567890abcdef"
+
+# Public inputs
+# 32-depth sibling path (empty tree = all zeros)
+sibling_path = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+
+# Path indices (all left = 0)
+path_indices = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+
+# Root (computed for empty tree with this address)
+root = "0x0"

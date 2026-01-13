@@ -1,0 +1,6 @@
+[package]
+name = "smt_exclusion"
+type = "bin"
+authors = ["ZKGate DEX"]
+
+[dependencies]

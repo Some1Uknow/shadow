@@ -1,0 +1,7 @@
+# Private inputs (witness)
+token_amount = "10000"
+user_address = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+
+# Public inputs
+token_mint = "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+min_required = "1000"

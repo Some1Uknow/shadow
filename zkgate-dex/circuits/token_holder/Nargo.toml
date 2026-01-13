@@ -1,0 +1,6 @@
+[package]
+name = "token_holder"
+type = "bin"
+authors = ["ZKGate DEX"]
+
+[dependencies]

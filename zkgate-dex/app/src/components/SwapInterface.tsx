@@ -261,7 +261,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="mb-4 p-4 rounded-xl" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
+        <div className="mb-4 p-4 rounded-xl animate-fade-in-down" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
           <p className="text-xs mb-3" style={{ color: 'var(--text-primary)' }}>Slippage Tolerance</p>
           <div className="flex gap-2">
             {[0.1, 0.5, 1.0].map((val) => (
@@ -282,7 +282,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
                 type="number"
                 value={slippage}
                 onChange={(e) => setSlippage(parseFloat(e.target.value) || 0.5)}
-                className="w-12 bg-transparent text-sm text-right outline-none"
+                className="w-12 bg-transparent text-sm text-right outline-none no-spinner"
                 style={{ color: 'var(--text-primary)' }}
               />
               <span className="text-sm" style={{ color: 'var(--text-primary)' }}>%</span>
@@ -302,13 +302,9 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
       <div className="rounded-xl p-4 mb-2" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm" style={{ color: 'var(--text-primary)' }}>You pay</span>
-          <button
-            onClick={setMaxAmount}
-            className="text-xs font-medium transition-colors hover:opacity-80"
-            style={{ color: 'var(--accent-primary)' }}
-          >
-            Balance: {fromBalance.toFixed(4)} (Max)
-          </button>
+          <span className="text-xs" style={{ color: 'var(--text-primary)' }}>
+            Balance: {fromBalance.toFixed(4)}
+          </span>
         </div>
         <div className="flex items-center gap-4">
           <input
@@ -316,12 +312,36 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
             value={amountIn}
             onChange={(e) => setAmountIn(e.target.value)}
             placeholder="0"
-            className="flex-1 bg-transparent text-2xl font-medium outline-none"
+            className="flex-1 bg-transparent text-2xl font-medium outline-none no-spinner"
             style={{ color: 'var(--text-primary)' }}
           />
           <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-primary)' }}>
             {fromToken}
           </div>
+        </div>
+
+        {/* Quick Input Buttons */}
+        <div className="flex gap-2 mt-3">
+          {[0.1, 0.5, 1].map((val) => (
+            <button
+              key={val}
+              onClick={() => {
+                const current = parseFloat(amountIn) || 0;
+                setAmountIn(parseFloat((current + val).toFixed(6)).toString());
+              }}
+              className="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:bg-white/10"
+              style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)' }}
+            >
+              +{val}
+            </button>
+          ))}
+          <button
+            onClick={setMaxAmount}
+            className="px-3 py-1 rounded-lg text-xs font-medium transition-colors hover:bg-white/10 ml-auto"
+            style={{ background: 'rgba(34, 211, 238, 0.1)', color: 'var(--accent-primary)' }}
+          >
+            Max
+          </button>
         </div>
       </div>
 
@@ -356,31 +376,32 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
         </div>
       </div>
 
-      {/* Swap Details */}
-      {parseFloat(amountIn) > 0 && estimatedOutput > 0 && (
-        <div className="mt-4 p-3 rounded-xl text-xs space-y-2" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--text-primary)' }}>Rate</span>
-            <span style={{ color: 'var(--text-primary)' }}>
-              1 {fromToken} = {(estimatedOutput / parseFloat(amountIn)).toFixed(6)} {toToken}
-            </span>
+      {
+        parseFloat(amountIn) > 0 && estimatedOutput > 0 && (
+          <div className="mt-4 p-3 rounded-xl text-xs space-y-2 animate-fade-in-down" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
+            <div className="flex justify-between">
+              <span style={{ color: 'var(--text-primary)' }}>Rate</span>
+              <span style={{ color: 'var(--text-primary)' }}>
+                1 {fromToken} = {(estimatedOutput / parseFloat(amountIn)).toFixed(6)} {toToken}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span style={{ color: 'var(--text-primary)' }}>Minimum received</span>
+              <span style={{ color: 'var(--text-primary)' }}>{minOutput.toFixed(6)} {toToken}</span>
+            </div>
+            <div className="flex justify-between">
+              <span style={{ color: 'var(--text-primary)' }}>Price impact</span>
+              <span style={{ color: priceImpact > 5 ? 'var(--warning)' : 'var(--text-primary)' }}>
+                {priceImpact.toFixed(2)}%
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span style={{ color: 'var(--text-primary)' }}>Slippage tolerance</span>
+              <span style={{ color: 'var(--text-primary)' }}>{slippage}%</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--text-primary)' }}>Minimum received</span>
-            <span style={{ color: 'var(--text-primary)' }}>{minOutput.toFixed(6)} {toToken}</span>
-          </div>
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--text-primary)' }}>Price impact</span>
-            <span style={{ color: priceImpact > 5 ? 'var(--warning)' : 'var(--text-primary)' }}>
-              {priceImpact.toFixed(2)}%
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span style={{ color: 'var(--text-primary)' }}>Slippage tolerance</span>
-            <span style={{ color: 'var(--text-primary)' }}>{slippage}%</span>
-          </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Action Buttons */}
       <div className="mt-6">
@@ -424,28 +445,32 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
       </div>
 
       {/* Error Display */}
-      {(error || proofError) && (
-        <div className="mt-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.3)', color: 'var(--error)' }}>
-          {error || proofError}
-        </div>
-      )}
+      {
+        (error || proofError) && (
+          <div className="mt-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(248, 113, 113, 0.1)', border: '1px solid rgba(248, 113, 113, 0.3)', color: 'var(--error)' }}>
+            {error || proofError}
+          </div>
+        )
+      }
 
       {/* Success Display */}
-      {txSignature && (
-        <div className="mt-4 p-3 rounded-xl" style={{ background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
-          <p className="text-sm mb-2" style={{ color: 'var(--success)' }}>Swap successful!</p>
-          <a
-            href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs break-all"
-            style={{ color: 'var(--accent-primary)' }}
-          >
-            View on Explorer →
-          </a>
-        </div>
-      )}
-    </div>
+      {
+        txSignature && (
+          <div className="mt-4 p-3 rounded-xl" style={{ background: 'rgba(52, 211, 153, 0.1)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+            <p className="text-sm mb-2" style={{ color: 'var(--success)' }}>Swap successful!</p>
+            <a
+              href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs break-all"
+              style={{ color: 'var(--accent-primary)' }}
+            >
+              View on Explorer →
+            </a>
+          </div>
+        )
+      }
+    </div >
   );
 }
 

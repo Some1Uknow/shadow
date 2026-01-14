@@ -83,7 +83,7 @@ export default function SwapPage() {
                 </aside>
 
                 {/* Center - Swap Interface Panel */}
-                <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/swap.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <div className="w-full max-w-md">
                         <SwapInterface
                             onProofGenerated={() => setProofGenerated(true)}

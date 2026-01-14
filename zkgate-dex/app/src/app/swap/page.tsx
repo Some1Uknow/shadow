@@ -54,7 +54,7 @@ export default function SwapPage() {
     return (
         <div className="min-h-screen p-4 flex flex-col gap-4" style={{ background: 'var(--bg-primary)' }}>
             {/* Header - Glassmorphic Panel */}
-            <header className="glass-panel px-6 py-4 flex items-center justify-between">
+            <header className="glass-panel px-6 py-4 flex items-center justify-between" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/header.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <div className="flex items-center gap-3">
                     <h1 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                         Shadow
@@ -78,12 +78,12 @@ export default function SwapPage() {
             {/* Main Content Area */}
             <div className="flex-1 flex gap-4">
                 {/* Left - Pool Info Panel */}
-                <aside className="w-96 glass-panel p-6 overflow-y-auto">
+                <aside className="w-96 glass-panel p-6 overflow-y-auto" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/pool.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <PoolInfo />
                 </aside>
 
                 {/* Center - Swap Interface Panel */}
-                <main className="flex-1 flex items-center justify-center glass-panel p-8">
+                <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/swap.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <div className="w-full max-w-md">
                         <SwapInterface
                             onProofGenerated={() => setProofGenerated(true)}
@@ -94,7 +94,7 @@ export default function SwapPage() {
             </div>
 
             {/* Footer - ZK Proof Status Panel */}
-            <footer className="glass-panel">
+            <footer className="glass-panel" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <ProofStatus proofGenerated={proofGenerated} />
             </footer>
         </div>

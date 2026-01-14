@@ -232,9 +232,9 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
     return (
       <div>
         <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Swap</h2>
-        <div className="p-4 rounded-xl" style={{ background: 'var(--bg-input)', border: '1px solid var(--warning)' }}>
+        <div className="p-4 rounded-xl" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)', border: '1px solid var(--warning)' }}>
           <p className="text-sm font-medium mb-2" style={{ color: 'var(--warning)' }}>⚠️ Pool Not Configured</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
             Configure environment variables to connect.
           </p>
         </div>
@@ -250,7 +250,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
         <button
           onClick={() => setShowSettings(!showSettings)}
           className="p-2 rounded-lg transition-colors"
-          style={{ background: showSettings ? 'var(--bg-elevated)' : 'var(--bg-input)', color: 'var(--text-secondary)' }}
+          style={{ background: showSettings ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)', color: 'var(--text-primary)' }}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -261,8 +261,8 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="mb-4 p-4 rounded-xl" style={{ background: 'var(--bg-input)' }}>
-          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Slippage Tolerance</p>
+        <div className="mb-4 p-4 rounded-xl" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-primary)' }}>Slippage Tolerance</p>
           <div className="flex gap-2">
             {[0.1, 0.5, 1.0].map((val) => (
               <button
@@ -270,14 +270,14 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
                 onClick={() => setSlippage(val)}
                 className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                 style={{
-                  background: slippage === val ? 'var(--accent-primary)' : 'var(--bg-elevated)',
-                  color: slippage === val ? '#0d0d0f' : 'var(--text-secondary)'
+                  background: slippage === val ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)',
+                  color: slippage === val ? '#0d0d0f' : 'var(--text-primary)'
                 }}
               >
                 {val}%
               </button>
             ))}
-            <div className="flex items-center gap-1 px-2 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+            <div className="flex items-center gap-1 px-2 rounded-lg" style={{ background: 'rgba(255, 255, 255, 0.1)' }}>
               <input
                 type="number"
                 value={slippage}
@@ -285,7 +285,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
                 className="w-12 bg-transparent text-sm text-right outline-none"
                 style={{ color: 'var(--text-primary)' }}
               />
-              <span className="text-sm" style={{ color: 'var(--text-muted)' }}>%</span>
+              <span className="text-sm" style={{ color: 'var(--text-primary)' }}>%</span>
             </div>
           </div>
         </div>
@@ -299,9 +299,9 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
       )}
 
       {/* You Pay Section */}
-      <div className="rounded-xl p-4 mb-2" style={{ background: 'var(--bg-input)' }}>
+      <div className="rounded-xl p-4 mb-2" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>You pay</span>
+          <span className="text-sm" style={{ color: 'var(--text-primary)' }}>You pay</span>
           <button
             onClick={setMaxAmount}
             className="text-xs font-medium transition-colors hover:opacity-80"
@@ -319,7 +319,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
             className="flex-1 bg-transparent text-2xl font-medium outline-none"
             style={{ color: 'var(--text-primary)' }}
           />
-          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
+          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-primary)' }}>
             {fromToken}
           </div>
         </div>
@@ -332,17 +332,17 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
           className="p-2 rounded-xl border transition-all hover:scale-110"
           style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
         >
-          <svg className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-5 h-5" style={{ color: 'var(--text-primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
           </svg>
         </button>
       </div>
 
       {/* You Receive Section */}
-      <div className="rounded-xl p-4 mt-2" style={{ background: 'var(--bg-input)' }}>
+      <div className="rounded-xl p-4 mt-2" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>You receive</span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-sm" style={{ color: 'var(--text-primary)' }}>You receive</span>
+          <span className="text-xs" style={{ color: 'var(--text-primary)' }}>
             Balance: {toBalance.toFixed(4)}
           </span>
         </div>
@@ -350,7 +350,7 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
           <div className="flex-1 text-2xl font-medium" style={{ color: estimatedOutput > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
             {estimatedOutput > 0 ? estimatedOutput.toFixed(6) : '0'}
           </div>
-          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)' }}>
+          <div className="px-4 py-2 rounded-xl font-medium" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-primary)' }}>
             {toToken}
           </div>
         </div>
@@ -358,26 +358,26 @@ export function SwapInterface({ onProofGenerated, proofGenerated }: SwapInterfac
 
       {/* Swap Details */}
       {parseFloat(amountIn) > 0 && estimatedOutput > 0 && (
-        <div className="mt-4 p-3 rounded-xl text-xs space-y-2" style={{ background: 'var(--bg-input)' }}>
+        <div className="mt-4 p-3 rounded-xl text-xs space-y-2" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
           <div className="flex justify-between">
-            <span style={{ color: 'var(--text-muted)' }}>Rate</span>
-            <span style={{ color: 'var(--text-secondary)' }}>
+            <span style={{ color: 'var(--text-primary)' }}>Rate</span>
+            <span style={{ color: 'var(--text-primary)' }}>
               1 {fromToken} = {(estimatedOutput / parseFloat(amountIn)).toFixed(6)} {toToken}
             </span>
           </div>
           <div className="flex justify-between">
-            <span style={{ color: 'var(--text-muted)' }}>Minimum received</span>
-            <span style={{ color: 'var(--text-secondary)' }}>{minOutput.toFixed(6)} {toToken}</span>
+            <span style={{ color: 'var(--text-primary)' }}>Minimum received</span>
+            <span style={{ color: 'var(--text-primary)' }}>{minOutput.toFixed(6)} {toToken}</span>
           </div>
           <div className="flex justify-between">
-            <span style={{ color: 'var(--text-muted)' }}>Price impact</span>
-            <span style={{ color: priceImpact > 5 ? 'var(--warning)' : 'var(--text-secondary)' }}>
+            <span style={{ color: 'var(--text-primary)' }}>Price impact</span>
+            <span style={{ color: priceImpact > 5 ? 'var(--warning)' : 'var(--text-primary)' }}>
               {priceImpact.toFixed(2)}%
             </span>
           </div>
           <div className="flex justify-between">
-            <span style={{ color: 'var(--text-muted)' }}>Slippage tolerance</span>
-            <span style={{ color: 'var(--text-secondary)' }}>{slippage}%</span>
+            <span style={{ color: 'var(--text-primary)' }}>Slippage tolerance</span>
+            <span style={{ color: 'var(--text-primary)' }}>{slippage}%</span>
           </div>
         </div>
       )}

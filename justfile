@@ -64,8 +64,8 @@ copy-circuits:
     @echo "Copying circuit artifacts to frontend..."
     mkdir -p app/public
     cp circuits/min_balance/target/min_balance.json app/public/
-    cp circuits/token_holder/target/token_holder.json app/public/ 2>/dev/null || true
-    cp circuits/smt_exclusion/target/smt_exclusion.json app/public/ 2>/dev/null || true
+    cp circuits/token_holder/target/token_holder.json app/public/
+    cp circuits/smt_exclusion/target/smt_exclusion.json app/public/
     @echo "Circuit artifacts copied to app/public/"
 
 # Generate .env.local from pool-config.json
@@ -91,7 +91,7 @@ generate-env:
 # ============================================================================
 
 # Setup proving keys for all circuits
-setup-all: setup-min_balance setup-token_holder
+setup-all: setup-min_balance setup-token_holder setup-smt_exclusion
 
 # Setup min_balance proving key
 setup-min_balance:
@@ -108,6 +108,14 @@ setup-token_holder:
     sunspot setup circuits/token_holder/target/token_holder.json \
         --pk keys/token_holder/proving_key.pk \
         --vk keys/token_holder/verifying_key.vk
+
+# Setup smt_exclusion proving key
+setup-smt_exclusion:
+    @echo "Setting up smt_exclusion proving key..."
+    mkdir -p keys/smt_exclusion
+    sunspot setup circuits/smt_exclusion/target/smt_exclusion.json \
+        --pk keys/smt_exclusion/proving_key.pk \
+        --vk keys/smt_exclusion/verifying_key.vk
 
 # Generate proof for min_balance
 prove-min_balance:
@@ -127,12 +135,35 @@ prove-token_holder:
         --inputs circuits/token_holder/Prover.toml \
         --proof keys/token_holder/proof.bin
 
+# Generate proof for smt_exclusion
+prove-smt_exclusion:
+    @echo "Generating smt_exclusion proof..."
+    sunspot prove \
+        --circuit circuits/smt_exclusion/target/smt_exclusion.json \
+        --pk keys/smt_exclusion/proving_key.pk \
+        --inputs circuits/smt_exclusion/Prover.toml \
+        --proof keys/smt_exclusion/proof.bin
+
 # Verify proof locally
 verify-min_balance:
     @echo "Verifying min_balance proof..."
     sunspot verify \
         --vk keys/min_balance/verifying_key.vk \
         --proof keys/min_balance/proof.bin
+
+# Verify token_holder proof locally
+verify-token_holder:
+    @echo "Verifying token_holder proof..."
+    sunspot verify \
+        --vk keys/token_holder/verifying_key.vk \
+        --proof keys/token_holder/proof.bin
+
+# Verify smt_exclusion proof locally
+verify-smt_exclusion:
+    @echo "Verifying smt_exclusion proof..."
+    sunspot verify \
+        --vk keys/smt_exclusion/verifying_key.vk \
+        --proof keys/smt_exclusion/proof.bin
 
 # ============================================================================
 # Verifier Deployment

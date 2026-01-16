@@ -5,23 +5,15 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useRouter } from 'next/navigation';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { SwapInterface } from '@/components/SwapInterface';
+import { SwapInterfaceV2 } from '@/components/SwapInterfaceV2';
 import { PoolInfo } from '@/components/PoolInfo';
-import { ProofStatus } from '@/components/ProofStatus';
-
-interface ProofContext {
-    balance: number;
-    threshold: number;
-    generatedAt: number;
-}
 
 export default function SwapPage() {
     const { publicKey, connected } = useWallet();
     const { connection } = useConnection();
     const router = useRouter();
     const [balance, setBalance] = useState<number>(0);
-    const [proofGenerated, setProofGenerated] = useState(false);
-    const [proofContext, setProofContext] = useState<ProofContext | null>(null);
+    const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
 
     const fetchBalance = useCallback(async () => {
         if (publicKey) {
@@ -52,6 +44,14 @@ export default function SwapPage() {
         document.body.classList.add('dex-mode');
         return () => document.body.classList.remove('dex-mode');
     }, []);
+
+    // Refresh balance after swap
+    useEffect(() => {
+        if (lastTxSignature) {
+            const timeout = setTimeout(fetchBalance, 2000);
+            return () => clearTimeout(timeout);
+        }
+    }, [lastTxSignature, fetchBalance]);
 
     // Show nothing while redirecting
     if (!connected) {
@@ -92,24 +92,41 @@ export default function SwapPage() {
                 {/* Center - Swap Interface Panel */}
                 <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <div className="w-full max-w-md">
-                        <SwapInterface
-                            onProofGenerated={(context) => {
-                                setProofGenerated(true);
-                                setProofContext(context);
+                        <SwapInterfaceV2 
+                            onSwapComplete={(txSignature) => {
+                                setLastTxSignature(txSignature);
                             }}
-                            onProofReset={() => {
-                                setProofGenerated(false);
-                                setProofContext(null);
-                            }}
-                            proofGenerated={proofGenerated}
                         />
                     </div>
                 </main>
             </div>
 
-            {/* Footer - ZK Proof Status Panel */}
-            <footer className="glass-panel" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <ProofStatus proofGenerated={proofGenerated} proofContext={proofContext} />
+            {/* Footer - ZK Info Panel */}
+            <footer className="glass-panel px-6 py-4" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                ZK-Verified Swaps
+                            </span>
+                        </div>
+                        <div className="h-4 w-px" style={{ background: 'var(--border-primary)' }} />
+                        <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <span>Groth16 / BN254</span>
+                            <span>•</span>
+                            <span>Noir Circuits</span>
+                            <span>•</span>
+                            <span>Sunspot Verifier</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(167, 139, 250, 0.1)' }}>
+                        <svg className="w-4 h-4" style={{ color: 'var(--accent-secondary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <span className="text-xs font-medium" style={{ color: 'var(--accent-secondary)' }}>Privacy Preserved</span>
+                    </div>
+                </div>
             </footer>
         </div>
     );

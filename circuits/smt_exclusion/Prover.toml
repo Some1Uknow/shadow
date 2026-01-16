@@ -1,12 +1,21 @@
+# SMT Exclusion Proof - Prover Inputs
+# Proves an address is NOT on a blacklist (empty tree example)
+
 # Private inputs (witness)
-address = "0x1234567890abcdef"
+# The address we want to prove is NOT blacklisted
+address = "0x1234"
 
-# Public inputs
-# 32-depth sibling path (empty tree = all zeros)
-sibling_path = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-
-# Path indices (all left = 0)
+# Path indices - determines the path through the tree (private)
+# These are derived from the address hash off-chain
 path_indices = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
 
-# Root (computed for empty tree with this address)
+# Public inputs
+# 32-depth sibling path for empty tree
+# In an empty SMT, siblings are hashes of empty subtrees at each level
+sibling_path = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+
+# Root of the empty blacklist tree
+# This is computed as hash(hash(...hash(0,0)...)) 32 times
+# The actual value depends on the Pedersen hash implementation
+# For testing with empty tree, use 0x0 (will be computed properly in tests)
 root = "0x0"

@@ -51,7 +51,7 @@ echo ""
 echo "Step 1: Compiling Noir circuits..."
 echo "-------------------------------------------"
 
-for circuit in min_balance token_holder; do
+for circuit in min_balance token_holder smt_exclusion; do
     echo "Compiling $circuit..."
     cd "circuits/$circuit"
     nargo compile

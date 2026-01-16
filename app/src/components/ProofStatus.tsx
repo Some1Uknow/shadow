@@ -1,32 +1,80 @@
 'use client';
 
 import { useMemo } from 'react';
+import { CircuitType, CIRCUIT_INFO, ProofContext } from '@/hooks/useZKProof';
+
+// Legacy interface for backwards compatibility
+interface LegacyProofContext {
+  balance: number;
+  threshold: number;
+  generatedAt: number;
+}
 
 interface ProofStatusProps {
   proofGenerated: boolean;
-  proofContext?: {
-    balance: number;
-    threshold: number;
-    generatedAt: number;
-  } | null;
+  proofContext?: LegacyProofContext | ProofContext | null;
+  circuit?: CircuitType;
 }
 
-export function ProofStatus({ proofGenerated, proofContext }: ProofStatusProps) {
+// Type guard to check if context is the new ProofContext type
+function isNewProofContext(context: LegacyProofContext | ProofContext): context is ProofContext {
+  return 'circuit' in context;
+}
+
+export function ProofStatus({ proofGenerated, proofContext, circuit }: ProofStatusProps) {
+  // Determine the circuit type
+  const circuitType: CircuitType = useMemo(() => {
+    if (circuit) return circuit;
+    if (proofContext && isNewProofContext(proofContext)) return proofContext.circuit;
+    return 'min_balance';
+  }, [circuit, proofContext]);
+
   // Calculate time since proof was generated
   const proofAge = useMemo(() => {
-    if (!proofContext?.generatedAt) return null;
-    const seconds = Math.floor((Date.now() - proofContext.generatedAt) / 1000);
+    if (!proofContext) return null;
+    const generatedAt = isNewProofContext(proofContext) 
+      ? proofContext.generatedAt 
+      : proofContext.generatedAt;
+    if (!generatedAt) return null;
+    
+    const seconds = Math.floor((Date.now() - generatedAt) / 1000);
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     return `${Math.floor(minutes / 60)}h ago`;
-  }, [proofContext?.generatedAt]);
+  }, [proofContext]);
+
+  // Get proof description based on circuit type
+  const proofDescription = useMemo(() => {
+    if (!proofContext) return null;
+
+    if (isNewProofContext(proofContext)) {
+      // New multi-circuit context
+      if (proofContext.minBalance) {
+        return `balance ≥ ${proofContext.minBalance.threshold.toFixed(2)} SOL`;
+      }
+      if (proofContext.tokenHolder) {
+        const minReq = parseInt(proofContext.tokenHolder.min_required) / 1e9;
+        return `holdings ≥ ${minReq.toFixed(2)} tokens`;
+      }
+      if (proofContext.exclusion) {
+        return 'address NOT on blacklist';
+      }
+    } else {
+      // Legacy context
+      return `balance ≥ ${(proofContext.threshold / 1000).toFixed(1)} tokens`;
+    }
+
+    return null;
+  }, [proofContext]);
+
+  const circuitInfo = CIRCUIT_INFO[circuitType];
 
   return (
     <div className="px-6 py-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         {/* Left - Status */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 md:gap-6 flex-wrap">
           {/* Proof Status */}
           <div className="flex items-center gap-2">
             <div
@@ -44,25 +92,27 @@ export function ProofStatus({ proofGenerated, proofContext }: ProofStatusProps) 
           </div>
 
           {/* Divider */}
-          <div className="h-4 w-px" style={{ background: 'var(--border-primary)' }} />
+          <div className="hidden md:block h-4 w-px" style={{ background: 'var(--border-primary)' }} />
 
           {/* Circuit Info */}
-          <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span>Circuit: <span style={{ color: 'var(--accent-secondary)' }}>min_balance</span></span>
-            <span>•</span>
+          <div className="flex items-center gap-2 md:gap-4 text-xs flex-wrap" style={{ color: 'var(--text-muted)' }}>
+            <span>
+              Circuit: <span style={{ color: 'var(--accent-secondary)' }}>{circuitInfo.name}</span>
+            </span>
+            <span className="hidden md:inline">•</span>
             <span>Groth16 / BN254</span>
-            <span>•</span>
-            <span>Sunspot Verifier</span>
+            <span className="hidden md:inline">•</span>
+            <span className="hidden md:inline">Sunspot Verifier</span>
           </div>
 
           {/* Proof Context (when available) */}
-          {proofGenerated && proofContext && (
+          {proofGenerated && proofDescription && (
             <>
-              <div className="h-4 w-px" style={{ background: 'var(--border-primary)' }} />
+              <div className="hidden md:block h-4 w-px" style={{ background: 'var(--border-primary)' }} />
               <div className="flex items-center gap-2 text-xs">
                 <span style={{ color: 'var(--text-muted)' }}>Proved:</span>
                 <span style={{ color: 'var(--accent-primary)' }}>
-                  balance ≥ {(proofContext.threshold / 1000).toFixed(1)} tokens
+                  {proofDescription}
                 </span>
               </div>
             </>
@@ -77,6 +127,16 @@ export function ProofStatus({ proofGenerated, proofContext }: ProofStatusProps) 
           <span className="text-xs font-medium" style={{ color: 'var(--accent-secondary)' }}>Privacy Preserved</span>
         </div>
       </div>
+
+      {/* Circuit-specific info bar */}
+      {proofGenerated && (
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>🔐</span>
+            <span>{circuitInfo.description}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

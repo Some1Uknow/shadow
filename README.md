@@ -2,7 +2,7 @@
 
 **Swap on Solana without exposing your eligibility data.**
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4XRjkS2WtHC6UQAiWSRtsLxkg73j8dyS4ChEUGUUgm8tWsNHEQ5cNGPbfjRQ6BacacicRTmqmCWi6CGxLv1qsuPt?cluster=devnet)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet)
 [![Built with Noir](https://img.shields.io/badge/ZK-Noir%20%2B%20Groth16-orange)](https://noir-lang.org)
 [![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solana.com)
 

@@ -194,6 +194,6 @@ shadow/
 
 ## Links
 
-- [Live Demo TX](https://explorer.solana.com/tx/4XRjkS2WtHC6UQAiWSRtsLxkg73j8dyS4ChEUGUUgm8tWsNHEQ5cNGPbfjRQ6BacacicRTmqmCWi6CGxLv1qsuPt?cluster=devnet)
+- [Live Demo TX](https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet)
 - [Noir Lang](https://noir-lang.org)
 - [Sunspot](https://github.com/reilabs/sunspot)

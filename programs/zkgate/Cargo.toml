@@ -1,0 +1,25 @@
+[package]
+name = "zkgate"
+version = "0.1.0"
+description = "ZK-gated DEX on Solana with Noir proof verification"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "zkgate"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "0.32.0", features = ["init-if-needed"] }
+anchor-spl = { version = "0.32.0", features = ["token"] }
+
+# Light Protocol dependencies for ZK Compression
+light-sdk = { version = "0.17.1", features = ["anchor"] }
+light-hasher = { version = "5.0.0", features = ["solana"] }

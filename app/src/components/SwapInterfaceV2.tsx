@@ -24,6 +24,7 @@ const DEFAULT_SLIPPAGE = 1;
  * 
  * Users don't manually generate proofs - it's all handled seamlessly.
  */
+
 export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
   const { publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();

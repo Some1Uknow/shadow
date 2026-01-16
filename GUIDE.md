@@ -1,4 +1,4 @@
-# ZKGate DEX - Setup Guide
+# Shadow DEX - Setup Guide
 
 Get the ZK-verified DEX running on Solana devnet.
 

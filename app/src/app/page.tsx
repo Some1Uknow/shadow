@@ -147,7 +147,7 @@ export default function Home() {
                   </span>
                 </h2>
                 <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
-                  ZKGate uses zero-knowledge proofs to verify you meet trading requirements — without exposing your actual balance.
+                  Shadow uses zero-knowledge proofs to verify you meet trading requirements — without exposing your actual balance.
                 </p>
                 
                 <div className="p-6 rounded-2xl bg-black/30 border border-white/10">

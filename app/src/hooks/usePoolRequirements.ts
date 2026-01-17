@@ -5,17 +5,14 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import { usePool } from './usePool';
-import { 
-  useZKProofMulti, 
+import {
+  useZKProofMulti,
   CircuitType,
   MinBalanceInputs,
   TokenHolderInputs,
   ExclusionInputs,
 } from './useZKProof';
 
-// ============================================================================
-// Types
-// ============================================================================
 
 /** Requirement types that a pool can enforce */
 export type RequirementType = 'min_balance' | 'token_holder' | 'exclusion';
@@ -68,9 +65,6 @@ export interface PoolRequirementsState {
   proofs: Map<RequirementType, { proof: Uint8Array; publicInputs: Uint8Array }>;
 }
 
-// ============================================================================
-// Pool Requirements Configuration
-// ============================================================================
 
 /**
  * Get pool requirements from environment or defaults
@@ -95,28 +89,10 @@ export function getPoolRequirements(): PoolRequirement[] {
       description: 'Minimum balance to swap',
       threshold: 0.1, // 0.1 tokens minimum
     },
-    // Uncomment to enable additional requirements:
-    // {
-    //   type: 'token_holder',
-    //   enabled: false,
-    //   description: 'Must hold governance token',
-    //   tokenMint: 'GovernanceTokenMintAddress',
-    //   tokenSymbol: 'GOV',
-    //   minRequired: 100,
-    // },
-    // {
-    //   type: 'exclusion',
-    //   enabled: false,
-    //   description: 'Not on sanctions list',
-    //   blacklistRoot: '0x0',
-    //   blacklistName: 'OFAC SDN',
-    // },
+
   ];
 }
 
-// ============================================================================
-// Hook
-// ============================================================================
 
 /**
  * Hook to check and enforce pool requirements
@@ -137,7 +113,7 @@ export function usePoolRequirements() {
   } = useZKProofMulti();
 
   // State
-  const [requirements] = useState<PoolRequirement[]>(() => 
+  const [requirements] = useState<PoolRequirement[]>(() =>
     getPoolRequirements().filter(r => r.enabled)
   );
   const [statuses, setStatuses] = useState<RequirementStatus[]>([]);
@@ -171,14 +147,14 @@ export function usePoolRequirements() {
         case 'min_balance': {
           // Get user's balance of the swap token
           if (!poolConfig) return { met: false, error: 'Pool not configured' };
-          
+
           const ata = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
           try {
             const account = await getAccount(connection, ata);
             const balance = Number(account.amount) / 1e9;
             const threshold = Math.max(requirement.threshold, swapAmount);
-            return { 
-              met: balance >= threshold, 
+            return {
+              met: balance >= threshold,
               userValue: balance,
               error: balance < threshold ? `Need ${threshold} tokens, have ${balance.toFixed(4)}` : undefined
             };
@@ -194,18 +170,18 @@ export function usePoolRequirements() {
             const ata = await getAssociatedTokenAddress(mintPubkey, publicKey);
             const account = await getAccount(connection, ata);
             const balance = Number(account.amount) / 1e9;
-            return { 
-              met: balance >= requirement.minRequired, 
+            return {
+              met: balance >= requirement.minRequired,
               userValue: balance,
-              error: balance < requirement.minRequired 
-                ? `Need ${requirement.minRequired} ${requirement.tokenSymbol}, have ${balance.toFixed(4)}` 
+              error: balance < requirement.minRequired
+                ? `Need ${requirement.minRequired} ${requirement.tokenSymbol}, have ${balance.toFixed(4)}`
                 : undefined
             };
           } catch {
-            return { 
-              met: false, 
-              userValue: 0, 
-              error: `No ${requirement.tokenSymbol} token account found` 
+            return {
+              met: false,
+              userValue: 0,
+              error: `No ${requirement.tokenSymbol} token account found`
             };
           }
         }
@@ -266,7 +242,7 @@ export function usePoolRequirements() {
       const status = statuses[i];
 
       if (!status?.met) {
-        console.log(`[usePoolRequirements] Requirement not met: ${req.type}`);
+
         return null;
       }
 
@@ -285,11 +261,10 @@ export function usePoolRequirements() {
               balance: status.userValue as number,
               threshold,
             };
-            console.log(`[usePoolRequirements] Generating min_balance proof:`, inputs);
             const proofResult = await generateMinBalanceProof(inputs);
             if (proofResult) {
               result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
-              console.log(`[usePoolRequirements] min_balance proof generated:`, result.proof.length, 'bytes');
+
             }
             break;
           }
@@ -302,7 +277,6 @@ export function usePoolRequirements() {
               token_mint: tokenReq.tokenMint,
               min_required: Math.floor(tokenReq.minRequired * 1e9).toString(),
             };
-            console.log(`[usePoolRequirements] Generating token_holder proof`);
             const proofResult = await generateTokenHolderProof(inputs);
             if (proofResult) {
               result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
@@ -313,7 +287,7 @@ export function usePoolRequirements() {
           case 'exclusion': {
             const exclReq = req as ExclusionRequirement;
             let inputs: ExclusionInputs;
-            
+
             if (exclReq.blacklistRoot === '0x0') {
               // Empty tree (testing)
               const emptyInputs = await getEmptyTreeInputs(publicKey.toBase58());
@@ -328,8 +302,7 @@ export function usePoolRequirements() {
                 root: exclReq.blacklistRoot,
               };
             }
-            
-            console.log(`[usePoolRequirements] Generating exclusion proof`);
+
             const proofResult = await generateExclusionProof(inputs);
             if (proofResult) {
               result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
@@ -351,11 +324,11 @@ export function usePoolRequirements() {
           return null;
         }
       } catch (err) {
-        console.error(`[usePoolRequirements] Proof generation error:`, err);
-        newStatuses[i] = { 
-          ...newStatuses[i], 
-          checking: false, 
-          error: err instanceof Error ? err.message : 'Proof generation failed' 
+
+        newStatuses[i] = {
+          ...newStatuses[i],
+          checking: false,
+          error: err instanceof Error ? err.message : 'Proof generation failed'
         };
         setStatuses([...newStatuses]);
         return null;
@@ -364,16 +337,16 @@ export function usePoolRequirements() {
 
     setStatuses(newStatuses);
     setProofs(newProofs);
-    
+
     // Return the primary proof directly
     return primaryProof;
   }, [
-    publicKey, 
-    poolConfig, 
-    requirements, 
-    statuses, 
-    generateMinBalanceProof, 
-    generateTokenHolderProof, 
+    publicKey,
+    poolConfig,
+    requirements,
+    statuses,
+    generateMinBalanceProof,
+    generateTokenHolderProof,
     generateExclusionProof,
     getEmptyTreeInputs,
   ]);
@@ -403,7 +376,7 @@ export function usePoolRequirements() {
   }, [requirements, resetProofs]);
 
   // Computed state
-  const allMet = useMemo(() => 
+  const allMet = useMemo(() =>
     statuses.length > 0 && statuses.every(s => s.met),
     [statuses]
   );
@@ -422,19 +395,19 @@ export function usePoolRequirements() {
     // Requirements
     requirements,
     statuses,
-    
+
     // State
     allMet,
     allProofsGenerated,
     anyChecking,
     proofError,
-    
+
     // Actions
     checkAllRequirements,
     generateAllProofs,
     getPrimaryProof,
     reset,
-    
+
     // Proofs map
     proofs,
   };

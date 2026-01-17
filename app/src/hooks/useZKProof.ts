@@ -2,9 +2,6 @@
 
 import { useState, useCallback } from 'react';
 
-// ============================================================================
-// Types
-// ============================================================================
 
 /** Available circuit types */
 export type CircuitType = 'min_balance' | 'token_holder' | 'smt_exclusion';
@@ -39,7 +36,7 @@ export interface ExclusionInputs {
 }
 
 /** Union type for all circuit inputs */
-export type CircuitInputs = 
+export type CircuitInputs =
   | { type: 'min_balance'; inputs: MinBalanceInputs }
   | { type: 'token_holder'; inputs: TokenHolderInputs }
   | { type: 'smt_exclusion'; inputs: ExclusionInputs };
@@ -72,9 +69,6 @@ export interface CircuitInfo {
   publicInputs: string[];
 }
 
-// ============================================================================
-// Circuit Metadata
-// ============================================================================
 
 export const CIRCUIT_INFO: Record<CircuitType, CircuitInfo> = {
   min_balance: {
@@ -103,9 +97,6 @@ export const CIRCUIT_INFO: Record<CircuitType, CircuitInfo> = {
   },
 };
 
-// ============================================================================
-// Legacy Hook (backwards compatible)
-// ============================================================================
 
 interface LegacyProofInputs {
   balance: number;
@@ -140,10 +131,6 @@ export function useZKProof() {
       const balanceUnits = Math.floor(inputs.balance * 1e9).toString();
       const thresholdUnits = Math.floor(inputs.threshold * 1e9).toString();
 
-      console.log('[useZKProof] Calling /api/prove with:', {
-        balance: balanceUnits,
-        threshold: thresholdUnits
-      });
 
       const response = await fetch('/api/prove', {
         method: 'POST',
@@ -172,9 +159,7 @@ export function useZKProof() {
         circuit: 'min_balance',
       };
 
-      console.log('[useZKProof] Proof generated successfully!');
-      console.log('[useZKProof] Proof size:', result.proof.length, 'bytes');
-      console.log('[useZKProof] Public inputs size:', result.publicInputs.length, 'bytes');
+
 
       setProof(result);
       setProofContext({
@@ -186,7 +171,7 @@ export function useZKProof() {
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[useZKProof] Error:', message);
+
       setError(message);
       return null;
     } finally {
@@ -211,9 +196,6 @@ export function useZKProof() {
   };
 }
 
-// ============================================================================
-// Multi-Circuit Hook
-// ============================================================================
 
 /**
  * Hook for generating ZK proofs for multiple circuit types
@@ -243,7 +225,6 @@ export function useZKProofMulti() {
       const balanceUnits = Math.floor(inputs.balance * 1e9).toString();
       const thresholdUnits = Math.floor(inputs.threshold * 1e9).toString();
 
-      console.log('[useZKProofMulti] Generating min_balance proof:', { balanceUnits, thresholdUnits });
 
       const response = await fetch('/api/prove', {
         method: 'POST',
@@ -270,12 +251,11 @@ export function useZKProofMulti() {
         minBalance: { balance: inputs.balance, threshold: inputs.threshold },
       });
 
-      console.log('[useZKProofMulti] min_balance proof generated:', result.proof.length, 'bytes');
       return result;
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[useZKProofMulti] min_balance error:', message);
+
       setError(message);
       return null;
     } finally {
@@ -293,10 +273,6 @@ export function useZKProofMulti() {
     setCurrentCircuit('token_holder');
 
     try {
-      console.log('[useZKProofMulti] Generating token_holder proof:', {
-        token_mint: inputs.token_mint.substring(0, 10) + '...',
-        min_required: inputs.min_required,
-      });
 
       const response = await fetch('/api/prove/token-holder', {
         method: 'POST',
@@ -323,12 +299,11 @@ export function useZKProofMulti() {
         tokenHolder: { token_mint: inputs.token_mint, min_required: inputs.min_required },
       });
 
-      console.log('[useZKProofMulti] token_holder proof generated:', result.proof.length, 'bytes');
       return result;
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[useZKProofMulti] token_holder error:', message);
+
       setError(message);
       return null;
     } finally {
@@ -346,10 +321,6 @@ export function useZKProofMulti() {
     setCurrentCircuit('smt_exclusion');
 
     try {
-      console.log('[useZKProofMulti] Generating smt_exclusion proof:', {
-        address: inputs.address.substring(0, 10) + '...',
-        root: inputs.root.substring(0, 10) + '...',
-      });
 
       const response = await fetch('/api/prove/exclusion', {
         method: 'POST',
@@ -376,12 +347,11 @@ export function useZKProofMulti() {
         exclusion: { root: inputs.root },
       });
 
-      console.log('[useZKProofMulti] smt_exclusion proof generated:', result.proof.length, 'bytes');
       return result;
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[useZKProofMulti] smt_exclusion error:', message);
+
       setError(message);
       return null;
     } finally {
@@ -426,7 +396,7 @@ export function useZKProofMulti() {
       return data.inputs as ExclusionInputs;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('[useZKProofMulti] getEmptyTreeInputs error:', message);
+
       return null;
     }
   }, []);
@@ -444,23 +414,23 @@ export function useZKProofMulti() {
     generateMinBalanceProof,
     generateTokenHolderProof,
     generateExclusionProof,
-    
+
     // Helpers
     getEmptyTreeInputs,
-    
+
     // State
     isGenerating,
     proof,
     proofContext,
     error,
     currentCircuit,
-    
+
     // Actions
     reset,
-    
+
     // Always ready since we use server-side generation
     isInitialized: true,
-    
+
     // Circuit metadata
     circuitInfo: CIRCUIT_INFO,
   };

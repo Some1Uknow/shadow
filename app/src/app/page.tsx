@@ -426,14 +426,7 @@ function ProblemCard({ title, description }: { title: string; description: strin
   );
 }
 
-function SolutionCard({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="backdrop-blur-sm bg-white/[0.03] rounded-2xl p-6 transition-all duration-300 hover:bg-white/[0.06]">
-      <h3 className="text-lg font-medium text-white/90 mb-2">{title}</h3>
-      <p className="text-white/50 text-sm leading-relaxed">{description}</p>
-    </div>
-  );
-}
+
 
 function UseCaseCard({ title, description }: { title: string; description: string }) {
   return (

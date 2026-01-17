@@ -126,7 +126,7 @@ export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
   }, [amountIn, reserveA, reserveB, swapDirection]);
 
   const minOutput = expectedOutput * (1 - slippage / 100);
-  
+
   const priceImpact = useMemo(() => {
     const input = parseFloat(amountIn) || 0;
     if (input <= 0 || reserveA <= 0 || reserveB <= 0) return 0;
@@ -155,19 +155,16 @@ export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
     setError(null);
 
     try {
-      // Step 1: Generate all required proofs automatically
-      // The proof is returned directly to avoid React state timing issues
-      console.log('[SwapV2] Generating required proofs...');
+      // Generate all required proofs automatically
       const primaryProof = await generateAllProofs(swapAmount);
-      
+
       if (!primaryProof) {
         setError('Failed to generate required proofs. Please try again.');
         setIsSwapping(false);
         return;
       }
 
-      console.log('[SwapV2] Proof generated:', primaryProof.proof.length, 'bytes');
-      console.log('[SwapV2] Executing swap...');
+
 
       // Step 3: Execute the swap
       const amountInLamports = new BN(Math.floor(swapAmount * 1e9));
@@ -215,10 +212,10 @@ export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
       setTxSignature(signature);
       onSwapComplete?.(signature);
 
-      console.log('[SwapV2] Swap complete:', signature);
+
 
     } catch (err) {
-      console.error('[SwapV2] Swap error:', err);
+
       let errorMessage = err instanceof Error ? err.message : 'Swap failed';
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('0x1')) {
         errorMessage = 'Insufficient liquidity in pool. Try a smaller amount.';
@@ -328,8 +325,8 @@ export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
               </div>
               {status.userValue !== undefined && (
                 <span style={{ color: status.met ? 'var(--accent-primary)' : 'var(--error)' }}>
-                  {typeof status.userValue === 'number' 
-                    ? status.userValue.toFixed(4) 
+                  {typeof status.userValue === 'number'
+                    ? status.userValue.toFixed(4)
                     : status.userValue}
                 </span>
               )}
@@ -349,9 +346,9 @@ export function SwapInterfaceV2({ onSwapComplete }: SwapInterfaceV2Props) {
           <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>You Pay</span>
           <span className="text-[10px]" style={{ color: 'var(--text-primary)' }}>
             Bal: {fromBalance.toFixed(4)}
-            <button 
-              onClick={() => setAmountIn(fromBalance.toString())} 
-              className="ml-1.5 font-semibold hover:opacity-80 transition-opacity" 
+            <button
+              onClick={() => setAmountIn(fromBalance.toString())}
+              className="ml-1.5 font-semibold hover:opacity-80 transition-opacity"
               style={{ color: 'var(--accent-primary)' }}
             >
               MAX

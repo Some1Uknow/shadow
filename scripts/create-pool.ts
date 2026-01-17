@@ -178,17 +178,8 @@ async function main() {
   try {
     await programConnected.methods
       .createPool(
-        new BN(INITIAL_LIQUIDITY_A), // Note: create_pool in lib.rs takes u64 init_a, init_b but logic sets reserves. 
-        new BN(INITIAL_LIQUIDITY_B)  // Wait, lib.rs create_pool sets reserves but transfer is in add_liquidity?
-        // Checking lib.rs again: create_pool params (init_a, init_b) set pool.token_a_reserve = init_a.
-        // But NO transfer happens in create_pool. It just sets the numbers.
-        // Real liquidity must be transferred. 
-        // Actually, we should call create_pool with 0, then add_liquidity? 
-        // Or does create_pool expect us to manually send tokens to the reserve ATAs beforehand?
-        // Standard practice: create_pool does everything OR create then add.
-        // lib.rs create_pool: pool.token_a_reserve = init_a; ... No transfer.
-        // This implies we must transfer tokens MANUALLY to the reserve accounts if we set init_a > 0.
-        // Let's do that.
+        new BN(INITIAL_LIQUIDITY_A),
+        new BN(INITIAL_LIQUIDITY_B)
       )
       .accounts({
         pool: poolPda,
@@ -203,10 +194,6 @@ async function main() {
       .signers([deployer])
       .rpc();
     console.log('Pool initialized!');
-
-    // Since create_pool in lib.rs sets the reserve integer BUT does not pull tokens (based on my read),
-    // we must manually transfer tokens to the reserves to match the integers we just set.
-    // OTHERWISE the pool has valid integers but 0 actual tokens, and swaps will fail/math will be wrong vs reality.
 
     console.log('\nStep 8: Transferring initial liquidity to reserves...');
     // Transfer A to Reserve A

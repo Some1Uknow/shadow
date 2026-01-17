@@ -517,7 +517,7 @@ pub mod zkgate {
     }
 }
 
-// ... (existing verify_zk_proof and get_amount_out functions) ...
+
 
 #[derive(Accounts)]
 pub struct ZkSwapPrivate<'info> {
@@ -879,7 +879,7 @@ pub struct GetPoolInfo<'info> {
     pub pool: Account<'info, Pool>,
 }
 
-// ZkSwapReverseShielded struct removed
+
 
 // ============================================================================
 // State

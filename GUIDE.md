@@ -53,8 +53,8 @@ sudo mv sunspot /usr/local/bin/
 If you just want to test without deploying:
 
 ```bash
-git clone <repo> zkgate-dex
-cd zkgate-dex
+git clone <repo> shadow
+cd shadow
 npm install
 cd app && pnpm install
 cp .env.local.example .env.local

@@ -153,4 +153,4 @@ See [GUIDE.md](GUIDE.md) for full setup.
 
 ## License
 
-MIT
+[MIT](LICENSE)

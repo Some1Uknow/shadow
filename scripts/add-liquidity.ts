@@ -62,11 +62,45 @@ async function main() {
         console.log('  Deployer Token B:', Number(userBInfo.amount) / 1e9, 'tokens');
     } catch { console.log('  Deployer Token B: 0 tokens (or error)'); }
 
-    // Add 5 of each token as liquidity
-    const amountA = new BN(5 * 1e9);
-    const amountB = new BN(5 * 1e9);
+    // Check and mint if needed
+    const amountA = new BN(100 * 1e9);
+    const amountB = new BN(100 * 1e9);
 
-    console.log('\nAdding liquidity: 5 Token A, 5 Token B');
+    // Helper to mint if low balance
+    const ensureBalance = async (
+        tokenMint: PublicKey,
+        userAta: PublicKey,
+        currentBalance: number,
+        required: number,
+        tokenName: string
+    ) => {
+        if (currentBalance < required) {
+            console.log(`\nLow balance for ${tokenName}. Minting...`);
+            try {
+                // Dynamic import to avoid earlier execution issues
+                const { mintTo } = await import('@solana/spl-token');
+                await mintTo(
+                    connection,
+                    deployerKeypair,
+                    tokenMint,
+                    userAta,
+                    deployerKeypair,
+                    (required - currentBalance) + 10_000_000_000 // Mint extra
+                );
+                console.log(`Minted fresh ${tokenName}`);
+            } catch (e) {
+                console.error(`Failed to mint ${tokenName}:`, e);
+            }
+        }
+    };
+
+    const currentA = Number((await getAccount(connection, deployerTokenA).catch(() => ({ amount: BigInt(0) }))).amount);
+    const currentB = Number((await getAccount(connection, deployerTokenB).catch(() => ({ amount: BigInt(0) }))).amount);
+
+    await ensureBalance(tokenAMint, deployerTokenA, currentA, amountA.toNumber(), 'Token A');
+    await ensureBalance(tokenBMint, deployerTokenB, currentB, amountB.toNumber(), 'Token B');
+
+    console.log('\nAdding liquidity: 100 Token A, 100 Token B');
 
     try {
         const tx = await (program.methods as any)

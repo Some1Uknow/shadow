@@ -4,7 +4,16 @@
   "description": "Shadow - Zero-Knowledge Privacy DEX on Solana",
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "add-liquidity": "ts-node scripts/add-liquidity.ts",
+    "airdrop": "ts-node scripts/airdrop-tokens.ts",
+    "create-pool": "ts-node scripts/create-pool.ts",
+    "fund-user": "ts-node scripts/fund-user.ts",
+    "init-pool": "ts-node scripts/init-pool.ts",
+    "test-swap": "ts-node scripts/test-swap.ts",
+    "setup": "bash scripts/setup.sh",
+    "wallet-setup": "bash scripts/wallet-setup.sh",
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.0",

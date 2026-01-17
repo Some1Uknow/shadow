@@ -17,7 +17,6 @@ export interface PoolConfig {
     verifierState: PublicKey;
     network: string;
     rpcEndpoint: string;
-    compressionEndpoint: string;
 }
 
 /**
@@ -77,7 +76,6 @@ export function getPoolConfig(): PoolConfig | null {
         ),
         network: process.env.NEXT_PUBLIC_NETWORK || 'devnet',
         rpcEndpoint: process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com',
-        compressionEndpoint: process.env.NEXT_PUBLIC_COMPRESSION_RPC || 'https://devnet.helius-rpc.com?api-key=YOUR_KEY',
     };
 }
 

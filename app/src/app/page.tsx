@@ -13,10 +13,19 @@ import {
   CircuitCard,
   HowItWorksVisual
 } from '@/components/landing';
+import { useImagePreload } from '@/hooks/useImagePreload';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 export default function Home() {
   const { connected } = useWallet();
   const router = useRouter();
+
+  // Preload priority images
+  const heroLoaded = useImagePreload('/bg.png');
+  const featuresLoaded = useImagePreload('/bg-features.jpg');
+  const whyLoaded = useImagePreload('/bg-why.jpg');
+  const ctaLoaded = useImagePreload('/bg-cta.jpg');
+  const howItWorksLoaded = useImagePreload('/bg-howitworks.jpg');
 
   useEffect(() => {
     if (connected) {
@@ -29,6 +38,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="p-4 md:p-6 lg:p-8">
         <div className="hero-bg rounded-3xl min-h-[90vh] flex flex-col relative overflow-hidden">
+          <LoadingOverlay isLoading={!heroLoaded} />
           <Particles className="absolute inset-0 z-0" color="#22d3ee" quantity={40} size={0.6} />
 
           <header className="px-6 md:px-8 pt-6 md:pt-8 pb-4 flex justify-between items-start relative z-10">
@@ -104,6 +114,7 @@ export default function Home() {
       {/* Problem Section - Text Right, Cards Left */}
       <section className="p-4 md:p-6">
         <div className="section-bg-features rounded-3xl py-16 md:py-24 relative overflow-hidden">
+          <LoadingOverlay isLoading={!featuresLoaded} />
           <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Cards Left */}
@@ -144,6 +155,7 @@ export default function Home() {
       {/* Solution Section - Text Left, Circuits Right */}
       <section className="p-4 md:p-6">
         <div className="section-bg-why rounded-3xl py-16 md:py-24 relative overflow-hidden">
+          <LoadingOverlay isLoading={!whyLoaded} />
           <Particles className="absolute inset-0 z-0" color="#a78bfa" quantity={30} size={0.5} />
 
           <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
@@ -208,6 +220,7 @@ export default function Home() {
       {/* Use Cases Section - Text Right, Cards Left */}
       <section className="p-4 md:p-6">
         <div className="section-bg-cta rounded-3xl py-16 md:py-24 relative overflow-hidden">
+          <LoadingOverlay isLoading={!ctaLoaded} />
           <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
               {/* Cards Left - 2x2 Grid */}
@@ -248,6 +261,7 @@ export default function Home() {
       {/* How It Works Section - Text Left, Visual Steps Right */}
       <section className="p-4 md:p-6">
         <div className="section-bg-howitworks rounded-3xl py-16 md:py-24 relative overflow-hidden">
+          <LoadingOverlay isLoading={!howItWorksLoaded} />
           <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Text Left */}
@@ -273,6 +287,7 @@ export default function Home() {
       {/* CTA Section */}
       <section className="p-4 md:p-6">
         <div className="section-bg-techstack rounded-3xl py-16 md:py-24 relative overflow-hidden">
+          <LoadingOverlay isLoading={!ctaLoaded} />
           <Particles className="absolute inset-0 z-0" color="#ffffff" quantity={50} size={0.4} />
 
           <div className="max-w-4xl mx-auto px-6 md:px-8 text-center relative z-10">

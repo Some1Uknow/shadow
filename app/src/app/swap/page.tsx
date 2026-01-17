@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SwapInterface } from '@/components/swap';
 import { PoolInfo } from '@/components/PoolInfo';
+import { useImagePreload } from '@/hooks/useImagePreload';
+import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 import { GitHubStarButton } from '@/components/GitHubStarButton';
 
@@ -16,6 +19,12 @@ export default function SwapPage() {
     const router = useRouter();
     const [balance, setBalance] = useState<number>(0);
     const [lastTxSignature, setLastTxSignature] = useState<string | null>(null);
+
+    // Preload background images
+    const headerLoaded = useImagePreload('/header.png');
+    const poolLoaded = useImagePreload('/pool.png');
+    const swapLoaded = useImagePreload('/swap.jpg');
+    const footerLoaded = useImagePreload('/footer.png');
 
     const fetchBalance = useCallback(async () => {
         if (publicKey) {
@@ -63,8 +72,19 @@ export default function SwapPage() {
     return (
         <div className="min-h-screen p-4 flex flex-col gap-4" style={{ background: 'var(--bg-primary)' }}>
             {/* Header - Glassmorphic Panel */}
-            <header className="glass-panel px-6 py-4 flex items-center justify-between" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/header.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div className="flex items-center gap-3">
+            <header className="glass-panel px-6 py-4 flex items-center justify-between relative z-50" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/header.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="absolute inset-0 z-0 overflow-hidden rounded-[20px]">
+                    <LoadingOverlay isLoading={!headerLoaded} />
+                    <Image
+                        src="/header.png"
+                        alt="Header Background"
+                        fill
+                        className="object-cover opacity-60"
+                        quality={80}
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                </div>
+                <div className="flex items-center gap-3 relative z-10">
                     <h1 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                         Shadow
                     </h1>
@@ -74,7 +94,7 @@ export default function SwapPage() {
                     </span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 relative z-10">
                     <div className="text-right mr-2">
                         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Balance</p>
                         <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -88,13 +108,15 @@ export default function SwapPage() {
             {/* Main Content Area */}
             <div className="flex-1 flex gap-4">
                 {/* Left - Pool Info Panel */}
-                <aside className="w-96 glass-panel p-6 overflow-y-auto" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/pool.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <aside className="w-96 glass-panel p-6 overflow-y-auto relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/pool.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                    <LoadingOverlay isLoading={!poolLoaded} />
                     <PoolInfo />
                 </aside>
 
                 {/* Center - Swap Interface Panel */}
-                <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                    <div className="w-full max-w-md">
+                <main className="flex-1 flex items-center justify-center glass-panel p-8 relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                    <LoadingOverlay isLoading={!swapLoaded} />
+                    <div className="w-full max-w-md relative z-10">
                         <SwapInterface
                             onSwapComplete={(txSignature) => {
                                 setLastTxSignature(txSignature);
@@ -105,8 +127,9 @@ export default function SwapPage() {
             </div>
 
             {/* Footer - ZK Info Panel */}
-            <footer className="glass-panel px-6 py-4" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <div className="flex items-center justify-between">
+            <footer className="glass-panel px-6 py-4 relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <LoadingOverlay isLoading={!footerLoaded} />
+                <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />

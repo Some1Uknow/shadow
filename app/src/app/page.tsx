@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Particles } from '@/components/ui/particles';
 import { GitHubStarButton } from '@/components/GitHubStarButton';
+import { useImagePreload } from '@/hooks/useImagePreload';
+import { FullScreenLoader } from '@/components/ui/FullScreenLoader';
 import {
   ProblemCard,
   UseCaseCard,
@@ -18,6 +20,9 @@ export default function Home() {
   const { connected } = useWallet();
   const router = useRouter();
 
+  // Preload hero background image
+  const bgLoaded = useImagePreload('/bg.png');
+  const isLoading = !bgLoaded;
 
   useEffect(() => {
     if (connected) {
@@ -27,6 +32,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black">
+      <FullScreenLoader isLoading={isLoading} />
       {/* Hero Section */}
       <section className="p-4 md:p-6 lg:p-8">
         <div className="hero-bg rounded-3xl min-h-[90vh] flex flex-col relative overflow-hidden">
@@ -296,8 +302,7 @@ export default function Home() {
             <WalletMultiButton />
 
             <div className="mt-12 flex items-center justify-center gap-8 text-white/40 text-sm">
-              <a href="https://github.com/your-repo/shadow" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
-                GitHub
+              <a href="https://github.com/Some1Uknow/shadow" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">                GitHub
               </a>
               <a href="https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
                 View Demo TX

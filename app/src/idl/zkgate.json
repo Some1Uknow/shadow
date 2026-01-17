@@ -9,9 +9,6 @@
   "instructions": [
     {
       "name": "add_liquidity",
-      "docs": [
-        "Add liquidity to the pool"
-      ],
       "discriminator": [
         181,
         157,
@@ -65,9 +62,6 @@
     },
     {
       "name": "create_pool",
-      "docs": [
-        "Initialize a new liquidity pool for token pair A/B"
-      ],
       "discriminator": [
         233,
         146,
@@ -133,9 +127,6 @@
     },
     {
       "name": "get_pool_info",
-      "docs": [
-        "Get pool info (view function)"
-      ],
       "discriminator": [
         9,
         48,
@@ -160,10 +151,6 @@
     },
     {
       "name": "zk_swap",
-      "docs": [
-        "Execute a ZK-verified swap (A -> B)",
-        "Requires a valid ZK proof that the user meets eligibility criteria"
-      ],
       "discriminator": [
         48,
         167,
@@ -232,9 +219,6 @@
     },
     {
       "name": "zk_swap_reverse",
-      "docs": [
-        "Execute a ZK-verified swap (B -> A)"
-      ],
       "discriminator": [
         103,
         200,
@@ -357,65 +341,38 @@
         "fields": [
           {
             "name": "token_a_mint",
-            "docs": [
-              "Token A mint address"
-            ],
             "type": "pubkey"
           },
           {
             "name": "token_b_mint",
-            "docs": [
-              "Token B mint address"
-            ],
             "type": "pubkey"
           },
           {
             "name": "token_a_reserve",
-            "docs": [
-              "Current reserve of token A"
-            ],
             "type": "u64"
           },
           {
             "name": "token_b_reserve",
-            "docs": [
-              "Current reserve of token B"
-            ],
             "type": "u64"
           },
           {
             "name": "k",
-            "docs": [
-              "Constant product K (for reference)"
-            ],
             "type": "u128"
           },
           {
             "name": "bump",
-            "docs": [
-              "PDA bump seed"
-            ],
             "type": "u8"
           },
           {
             "name": "authority",
-            "docs": [
-              "Pool authority (creator)"
-            ],
             "type": "pubkey"
           },
           {
             "name": "total_fees_a",
-            "docs": [
-              "Total fees collected in token A"
-            ],
             "type": "u64"
           },
           {
             "name": "total_fees_b",
-            "docs": [
-              "Total fees collected in token B"
-            ],
             "type": "u64"
           }
         ]

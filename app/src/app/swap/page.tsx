@@ -5,7 +5,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useRouter } from 'next/navigation';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { SwapInterfaceV2 } from '@/components/SwapInterfaceV2';
+import { SwapInterface } from '@/components/swap';
 import { PoolInfo } from '@/components/PoolInfo';
 
 export default function SwapPage() {
@@ -92,7 +92,7 @@ export default function SwapPage() {
                 {/* Center - Swap Interface Panel */}
                 <main className="flex-1 flex items-center justify-center glass-panel p-8" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                     <div className="w-full max-w-md">
-                        <SwapInterfaceV2 
+                        <SwapInterface
                             onSwapComplete={(txSignature) => {
                                 setLastTxSignature(txSignature);
                             }}

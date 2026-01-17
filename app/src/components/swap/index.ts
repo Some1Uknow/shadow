@@ -1,1 +1,6 @@
-export { SwapInterface, SwapInterface as SwapInterfaceV2 } from './SwapInterface';
+export { SwapInterface } from './SwapInterface';
+export { SwapDetails } from './SwapDetails';
+export { SwapButton } from './SwapButton';
+export { RequirementsPanel } from './RequirementsPanel';
+export { SuccessPanel } from './SuccessPanel';
+export * from './icons';

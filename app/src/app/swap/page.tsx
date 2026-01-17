@@ -9,8 +9,7 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SwapInterface } from '@/components/swap';
 import { PoolInfo } from '@/components/PoolInfo';
 import { useImagePreload } from '@/hooks/useImagePreload';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
-
+import { FullScreenLoader } from '@/components/ui/FullScreenLoader';
 import { GitHubStarButton } from '@/components/GitHubStarButton';
 
 export default function SwapPage() {
@@ -25,6 +24,8 @@ export default function SwapPage() {
     const poolLoaded = useImagePreload('/pool.png');
     const swapLoaded = useImagePreload('/swap.jpg');
     const footerLoaded = useImagePreload('/footer.png');
+
+    const isLoading = !headerLoaded || !poolLoaded || !swapLoaded || !footerLoaded;
 
     const fetchBalance = useCallback(async () => {
         if (publicKey) {
@@ -71,10 +72,11 @@ export default function SwapPage() {
 
     return (
         <div className="min-h-screen p-4 flex flex-col gap-4" style={{ background: 'var(--bg-primary)' }}>
+            <FullScreenLoader isLoading={isLoading} />
             {/* Header - Glassmorphic Panel */}
             <header className="glass-panel px-6 py-4 flex items-center justify-between relative z-50" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/header.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <div className="absolute inset-0 z-0 overflow-hidden rounded-[20px]">
-                    <LoadingOverlay isLoading={!headerLoaded} />
+
                     <Image
                         src="/header.png"
                         alt="Header Background"
@@ -109,13 +111,13 @@ export default function SwapPage() {
             <div className="flex-1 flex gap-4">
                 {/* Left - Pool Info Panel */}
                 <aside className="w-96 glass-panel p-6 overflow-y-auto relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/pool.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                    <LoadingOverlay isLoading={!poolLoaded} />
+
                     <PoolInfo />
                 </aside>
 
                 {/* Center - Swap Interface Panel */}
                 <main className="flex-1 flex items-center justify-center glass-panel p-8 relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                    <LoadingOverlay isLoading={!swapLoaded} />
+
                     <div className="w-full max-w-md relative z-10">
                         <SwapInterface
                             onSwapComplete={(txSignature) => {
@@ -128,7 +130,7 @@ export default function SwapPage() {
 
             {/* Footer - ZK Info Panel */}
             <footer className="glass-panel px-6 py-4 relative overflow-hidden" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-                <LoadingOverlay isLoading={!footerLoaded} />
+
                 <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">

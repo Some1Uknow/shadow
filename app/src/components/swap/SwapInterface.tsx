@@ -41,6 +41,7 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
     const fromToken = direction === 'AtoB' ? 'Token A' : 'Token B';
     const toToken = direction === 'AtoB' ? 'Token B' : 'Token A';
     const fromBalance = direction === 'AtoB' ? balanceA : balanceB;
+    const toBalance = direction === 'AtoB' ? balanceB : balanceA;
     const [reserveIn, reserveOut] = direction === 'AtoB' ? [reserveA, reserveB] : [reserveB, reserveA];
     const inputAmount = parseFloat(amountIn) || 0;
     const expectedOutput = useMemo(() => calculateExpectedOutput(inputAmount, reserveIn, reserveOut), [inputAmount, reserveIn, reserveOut]);
@@ -148,6 +149,22 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
                     <input type="number" value={amountIn} onChange={(e) => setAmountIn(e.target.value)} placeholder="0.0" disabled={isSwapping} className="flex-1 bg-transparent text-xl font-bold outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" style={{ color: 'var(--text-primary)' }} />
                     <div className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-primary)' }}>{fromToken}</div>
                 </div>
+                <div className="flex gap-1.5 mt-2">
+                    {[0.5, 1, 2, 5].map((amount) => (
+                        <button
+                            key={amount}
+                            onClick={() => {
+                                const current = parseFloat(amountIn) || 0;
+                                setAmountIn((current + amount).toString());
+                            }}
+                            disabled={isSwapping}
+                            className="px-2 py-1 rounded text-[10px] font-medium transition-all duration-200 hover:opacity-80"
+                            style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-primary)' }}
+                        >
+                            +{amount}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="flex justify-center -my-1 relative z-10">
@@ -155,7 +172,10 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
             </div>
 
             <div className="rounded-xl p-3" style={{ background: 'rgba(0, 0, 0, 0.20)' }}>
-                <div className="flex justify-between mb-1.5"><span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>You Receive</span></div>
+                <div className="flex justify-between mb-1.5">
+                    <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>You Receive</span>
+                    <span className="text-[10px]" style={{ color: 'var(--text-primary)' }}>Bal: {toBalance.toFixed(4)}</span>
+                </div>
                 <div className="flex items-center gap-2">
                     <span className="flex-1 text-xl font-bold" style={{ color: expectedOutput > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>{expectedOutput > 0 ? expectedOutput.toFixed(4) : '0.0'}</span>
                     <div className="px-2 py-1 rounded-lg text-xs font-semibold" style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-primary)' }}>{toToken}</div>

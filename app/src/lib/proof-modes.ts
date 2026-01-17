@@ -1,8 +1,9 @@
 /**
  * Proof Mode Configurations
  * 
- * Defines different proof configurations that judges can test.
- * Each mode demonstrates a different ZK circuit capability.
+ * NOTE: Circuits are simplified due to Sunspot (Groth16 prover) limitations
+ * with large field elements from Pedersen hashes. Production versions should
+ * use full cryptographic commitments once the prover is fixed.
  */
 
 import { PoolRequirement, MinBalanceRequirement, TokenHolderRequirement, ExclusionRequirement } from '@/types/pool';

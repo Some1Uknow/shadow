@@ -1,8 +1,3 @@
-# SMT Exclusion Proof - Generated Inputs
-
-# Private inputs
 address = "133710952177633457327820114016240927680"
 address_hash = "4145039517506637177162423534503468758097"
-
-# Public inputs
 blacklist_root = "0"

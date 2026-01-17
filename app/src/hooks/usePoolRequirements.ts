@@ -7,55 +7,21 @@ import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import { usePool } from './usePool';
 import {
   useZKProofMulti,
-  CircuitType,
   MinBalanceInputs,
   TokenHolderInputs,
   ExclusionInputs,
 } from './useZKProof';
+import {
+  PoolRequirement,
+  RequirementStatus,
+  RequirementType,
+  MinBalanceRequirement,
+  TokenHolderRequirement,
+  ExclusionRequirement,
+} from '@/types/pool';
+import { ProofGenerationError, AppError } from '@/lib/errors';
 
-
-/** Requirement types that a pool can enforce */
-export type RequirementType = 'min_balance' | 'token_holder' | 'exclusion';
-
-/** Base requirement interface */
-interface BaseRequirement {
-  type: RequirementType;
-  enabled: boolean;
-  description: string;
-}
-
-/** Min balance requirement - user must hold >= threshold of swap token */
-export interface MinBalanceRequirement extends BaseRequirement {
-  type: 'min_balance';
-  threshold: number; // In token units (not lamports)
-}
-
-/** Token holder requirement - user must hold >= min of a specific token */
-export interface TokenHolderRequirement extends BaseRequirement {
-  type: 'token_holder';
-  tokenMint: string;
-  tokenSymbol: string;
-  minRequired: number; // In token units
-}
-
-/** Exclusion requirement - user must NOT be on blacklist */
-export interface ExclusionRequirement extends BaseRequirement {
-  type: 'exclusion';
-  blacklistRoot: string;
-  blacklistName: string;
-}
-
-export type PoolRequirement = MinBalanceRequirement | TokenHolderRequirement | ExclusionRequirement;
-
-/** Status of a single requirement check */
-export interface RequirementStatus {
-  requirement: PoolRequirement;
-  met: boolean;
-  checking: boolean;
-  error: string | null;
-  userValue?: number | string; // User's actual value (balance, etc.)
-  proofGenerated: boolean;
-}
+// Types
 
 /** Overall pool requirements state */
 export interface PoolRequirementsState {
@@ -65,6 +31,13 @@ export interface PoolRequirementsState {
   proofs: Map<RequirementType, { proof: Uint8Array; publicInputs: Uint8Array }>;
 }
 
+/** Proof result type */
+interface ProofResult {
+  proof: Uint8Array;
+  publicInputs: Uint8Array;
+}
+
+// Helpers
 
 /**
  * Get pool requirements from environment or defaults
@@ -81,18 +54,18 @@ export function getPoolRequirements(): PoolRequirement[] {
     }
   }
 
-  // Default requirements for the demo pool
+  // Default requirements
   return [
     {
       type: 'min_balance',
       enabled: true,
       description: 'Minimum balance to swap',
       threshold: 0.1, // 0.1 tokens minimum
-    },
-
+    } as MinBalanceRequirement,
   ];
 }
 
+// Hook
 
 /**
  * Hook to check and enforce pool requirements
@@ -114,242 +87,282 @@ export function usePoolRequirements() {
 
   // State
   const [requirements] = useState<PoolRequirement[]>(() =>
-    getPoolRequirements().filter(r => r.enabled)
+    getPoolRequirements().filter((r) => r.enabled)
   );
   const [statuses, setStatuses] = useState<RequirementStatus[]>([]);
-  const [proofs, setProofs] = useState<Map<RequirementType, { proof: Uint8Array; publicInputs: Uint8Array }>>(new Map());
+  const [proofs, setProofs] = useState<Map<RequirementType, ProofResult>>(new Map());
   const [isCheckingAll, setIsCheckingAll] = useState(false);
 
   // Initialize statuses when requirements change
   useEffect(() => {
-    setStatuses(requirements.map(req => ({
-      requirement: req,
-      met: false,
-      checking: false,
-      error: null,
-      proofGenerated: false,
-    })));
+    setStatuses(
+      requirements.map((req) => ({
+        requirement: req,
+        met: false,
+        checking: false,
+        error: null,
+        proofGenerated: false,
+      }))
+    );
   }, [requirements]);
 
   /**
    * Check a single requirement
    */
-  const checkRequirement = useCallback(async (
-    requirement: PoolRequirement,
-    swapAmount: number
-  ): Promise<{ met: boolean; userValue?: number | string; error?: string }> => {
-    if (!publicKey || !connection) {
-      return { met: false, error: 'Wallet not connected' };
-    }
-
-    try {
-      switch (requirement.type) {
-        case 'min_balance': {
-          // Get user's balance of the swap token
-          if (!poolConfig) return { met: false, error: 'Pool not configured' };
-
-          const ata = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
-          try {
-            const account = await getAccount(connection, ata);
-            const balance = Number(account.amount) / 1e9;
-            const threshold = Math.max(requirement.threshold, swapAmount);
-            return {
-              met: balance >= threshold,
-              userValue: balance,
-              error: balance < threshold ? `Need ${threshold} tokens, have ${balance.toFixed(4)}` : undefined
-            };
-          } catch {
-            return { met: false, userValue: 0, error: 'No token account found' };
-          }
-        }
-
-        case 'token_holder': {
-          // Get user's balance of the required token
-          try {
-            const mintPubkey = new PublicKey(requirement.tokenMint);
-            const ata = await getAssociatedTokenAddress(mintPubkey, publicKey);
-            const account = await getAccount(connection, ata);
-            const balance = Number(account.amount) / 1e9;
-            return {
-              met: balance >= requirement.minRequired,
-              userValue: balance,
-              error: balance < requirement.minRequired
-                ? `Need ${requirement.minRequired} ${requirement.tokenSymbol}, have ${balance.toFixed(4)}`
-                : undefined
-            };
-          } catch {
-            return {
-              met: false,
-              userValue: 0,
-              error: `No ${requirement.tokenSymbol} token account found`
-            };
-          }
-        }
-
-        case 'exclusion': {
-          // For exclusion, we assume user is NOT blacklisted unless proven otherwise
-          // In production, you'd check against an actual blacklist service
-          return { met: true, userValue: 'Not blacklisted' };
-        }
-
-        default:
-          return { met: false, error: 'Unknown requirement type' };
+  const checkRequirement = useCallback(
+    async (
+      requirement: PoolRequirement,
+      swapAmount: number
+    ): Promise<{ met: boolean; userValue?: number | string; error?: string }> => {
+      if (!publicKey || !connection) {
+        return { met: false, error: 'Wallet not connected' };
       }
-    } catch (err) {
-      return { met: false, error: err instanceof Error ? err.message : 'Check failed' };
-    }
-  }, [publicKey, connection, poolConfig]);
+
+      try {
+        switch (requirement.type) {
+          case 'min_balance': {
+            const minReq = requirement as MinBalanceRequirement;
+            // Get user's balance of the swap token
+            if (!poolConfig) return { met: false, error: 'Pool not configured' };
+
+            const ata = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
+            try {
+              const account = await getAccount(connection, ata);
+              const balance = Number(account.amount) / 1e9;
+              const threshold = Math.max(minReq.threshold, swapAmount);
+              return {
+                met: balance >= threshold,
+                userValue: balance,
+                error:
+                  balance < threshold
+                    ? `Need ${threshold} tokens, have ${balance.toFixed(4)}`
+                    : undefined,
+              };
+            } catch {
+              return { met: false, userValue: 0, error: 'No token account found' };
+            }
+          }
+
+          case 'token_holder': {
+            const tokenReq = requirement as TokenHolderRequirement;
+            // Get user's balance of the required token
+            try {
+              const mintPubkey = new PublicKey(tokenReq.tokenMint);
+              const ata = await getAssociatedTokenAddress(mintPubkey, publicKey);
+              const account = await getAccount(connection, ata);
+              const balance = Number(account.amount) / 1e9;
+              return {
+                met: balance >= tokenReq.minRequired,
+                userValue: balance,
+                error:
+                  balance < tokenReq.minRequired
+                    ? `Need ${tokenReq.minRequired} ${tokenReq.tokenSymbol}, have ${balance.toFixed(
+                      4
+                    )}`
+                    : undefined,
+              };
+            } catch {
+              return {
+                met: false,
+                userValue: 0,
+                error: `No ${tokenReq.tokenSymbol} token account found`,
+              };
+            }
+          }
+
+          case 'exclusion': {
+            // For exclusion, we assume user is NOT blacklisted unless proven otherwise
+            // In production, you'd check against an actual blacklist service
+            return { met: true, userValue: 'Not blacklisted' };
+          }
+
+          default:
+            return { met: false, error: 'Unknown requirement type' };
+        }
+      } catch (err) {
+        return {
+          met: false,
+          error: err instanceof Error ? err.message : 'Check failed',
+        };
+      }
+    },
+    [publicKey, connection, poolConfig]
+  );
 
   /**
    * Check all requirements for a given swap amount
    */
-  const checkAllRequirements = useCallback(async (swapAmount: number) => {
-    if (!publicKey || requirements.length === 0) return;
+  const checkAllRequirements = useCallback(
+    async (swapAmount: number) => {
+      if (!publicKey || requirements.length === 0) return;
 
-    setIsCheckingAll(true);
+      setIsCheckingAll(true);
 
-    const newStatuses = await Promise.all(
-      requirements.map(async (req) => {
-        const result = await checkRequirement(req, swapAmount);
-        return {
-          requirement: req,
-          met: result.met,
-          checking: false,
-          error: result.error || null,
-          userValue: result.userValue,
-          proofGenerated: false,
-        };
-      })
-    );
+      const newStatuses = await Promise.all(
+        requirements.map(async (req) => {
+          const result = await checkRequirement(req, swapAmount);
+          return {
+            requirement: req,
+            met: result.met,
+            checking: false,
+            error: result.error || null,
+            userValue: result.userValue,
+            proofGenerated: false,
+          };
+        })
+      );
 
-    setStatuses(newStatuses);
-    setIsCheckingAll(false);
-  }, [publicKey, requirements, checkRequirement]);
+      setStatuses(newStatuses);
+      setIsCheckingAll(false);
+    },
+    [publicKey, requirements, checkRequirement]
+  );
 
   /**
    * Generate all required proofs and return the primary proof
    * Returns the proof directly to avoid React state timing issues
    */
-  const generateAllProofs = useCallback(async (swapAmount: number): Promise<{ proof: Uint8Array; publicInputs: Uint8Array } | null> => {
-    if (!publicKey || !poolConfig) return null;
+  const generateAllProofs = useCallback(
+    async (swapAmount: number): Promise<ProofResult | null> => {
+      if (!publicKey || !poolConfig) return null;
 
-    const newProofs = new Map<RequirementType, { proof: Uint8Array; publicInputs: Uint8Array }>();
-    const newStatuses = [...statuses];
-    let primaryProof: { proof: Uint8Array; publicInputs: Uint8Array } | null = null;
+      const newProofs = new Map<RequirementType, ProofResult>();
+      const newStatuses = [...statuses];
+      let primaryProof: ProofResult | null = null;
 
-    for (let i = 0; i < requirements.length; i++) {
-      const req = requirements[i];
-      const status = statuses[i];
+      for (let i = 0; i < requirements.length; i++) {
+        const req = requirements[i];
+        const status = statuses[i];
 
-      if (!status?.met) {
-
-        return null;
-      }
-
-      // Update status to show generating
-      newStatuses[i] = { ...status, checking: true };
-      setStatuses([...newStatuses]);
-
-      try {
-        let result: { proof: Uint8Array; publicInputs: Uint8Array } | null = null;
-
-        switch (req.type) {
-          case 'min_balance': {
-            const minReq = req as MinBalanceRequirement;
-            const threshold = Math.max(minReq.threshold, swapAmount);
-            const inputs: MinBalanceInputs = {
-              balance: status.userValue as number,
-              threshold,
-            };
-            const proofResult = await generateMinBalanceProof(inputs);
-            if (proofResult) {
-              result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
-
-            }
-            break;
-          }
-
-          case 'token_holder': {
-            const tokenReq = req as TokenHolderRequirement;
-            const inputs: TokenHolderInputs = {
-              token_amount: Math.floor((status.userValue as number) * 1e9).toString(),
-              user_address: publicKey.toBase58(),
-              token_mint: tokenReq.tokenMint,
-              min_required: Math.floor(tokenReq.minRequired * 1e9).toString(),
-            };
-            const proofResult = await generateTokenHolderProof(inputs);
-            if (proofResult) {
-              result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
-            }
-            break;
-          }
-
-          case 'exclusion': {
-            const exclReq = req as ExclusionRequirement;
-            let inputs: ExclusionInputs;
-
-            if (exclReq.blacklistRoot === '0x0') {
-              // Empty tree (testing)
-              const emptyInputs = await getEmptyTreeInputs(publicKey.toBase58());
-              if (!emptyInputs) throw new Error('Failed to get empty tree inputs');
-              inputs = emptyInputs;
-            } else {
-              // Real blacklist - would need to fetch merkle proof from service
-              inputs = {
-                address: publicKey.toBase58(),
-                path_indices: new Array(32).fill('0'),
-                sibling_path: new Array(32).fill('0'),
-                root: exclReq.blacklistRoot,
-              };
-            }
-
-            const proofResult = await generateExclusionProof(inputs);
-            if (proofResult) {
-              result = { proof: proofResult.proof, publicInputs: proofResult.publicInputs };
-            }
-            break;
-          }
+        if (!status?.met) {
+          return null;
         }
 
-        if (result) {
-          newProofs.set(req.type, result);
-          newStatuses[i] = { ...newStatuses[i], checking: false, proofGenerated: true };
-          // Store the first proof as primary
-          if (i === 0) {
-            primaryProof = result;
+        // Update status to show generating
+        newStatuses[i] = { ...status, checking: true };
+        setStatuses([...newStatuses]);
+
+        try {
+          let result: ProofResult | null = null;
+
+          switch (req.type) {
+            case 'min_balance': {
+              const minReq = req as MinBalanceRequirement;
+              const threshold = Math.max(minReq.threshold, swapAmount);
+              const inputs: MinBalanceInputs = {
+                balance: status.userValue as number,
+                threshold,
+              };
+              const proofResult = await generateMinBalanceProof(inputs);
+              if (proofResult) {
+                result = {
+                  proof: proofResult.proof,
+                  publicInputs: proofResult.publicInputs,
+                };
+              }
+              break;
+            }
+
+            case 'token_holder': {
+              const tokenReq = req as TokenHolderRequirement;
+              const inputs: TokenHolderInputs = {
+                token_amount: Math.floor((status.userValue as number) * 1e9).toString(),
+                user_address: publicKey.toBase58(),
+                token_mint: tokenReq.tokenMint,
+                min_required: Math.floor(tokenReq.minRequired * 1e9).toString(),
+              };
+              const proofResult = await generateTokenHolderProof(inputs);
+              if (proofResult) {
+                result = {
+                  proof: proofResult.proof,
+                  publicInputs: proofResult.publicInputs,
+                };
+              }
+              break;
+            }
+
+            case 'exclusion': {
+              const exclReq = req as ExclusionRequirement;
+              let inputs: ExclusionInputs;
+
+              if (exclReq.blacklistRoot === '0x0') {
+                // Empty tree (testing)
+                const emptyInputs = await getEmptyTreeInputs(publicKey.toBase58());
+                if (!emptyInputs) throw new Error('Failed to get empty tree inputs');
+                inputs = emptyInputs;
+              } else {
+                // Real blacklist - would need to fetch merkle proof from service
+                inputs = {
+                  address: publicKey.toBase58(),
+                  path_indices: new Array(32).fill('0'),
+                  sibling_path: new Array(32).fill('0'),
+                  root: exclReq.blacklistRoot,
+                };
+              }
+
+              const proofResult = await generateExclusionProof(inputs);
+              if (proofResult) {
+                result = {
+                  proof: proofResult.proof,
+                  publicInputs: proofResult.publicInputs,
+                };
+              }
+              break;
+            }
           }
-        } else {
-          newStatuses[i] = { ...newStatuses[i], checking: false, error: 'Proof generation failed' };
+
+          if (result) {
+            newProofs.set(req.type, result);
+            newStatuses[i] = {
+              ...newStatuses[i],
+              checking: false,
+              proofGenerated: true,
+            };
+            // Store the first proof as primary
+            if (i === 0) {
+              primaryProof = result;
+            }
+          } else {
+            const error = new ProofGenerationError('Proof generation returned null result from API');
+            newStatuses[i] = {
+              ...newStatuses[i],
+              checking: false,
+              error: error.message,
+            };
+            setStatuses([...newStatuses]);
+            return null;
+          }
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Proof generation failed';
+          const proofError = new ProofGenerationError(errorMsg, err);
+
+          newStatuses[i] = {
+            ...newStatuses[i],
+            checking: false,
+            error: proofError.message,
+          };
           setStatuses([...newStatuses]);
           return null;
         }
-      } catch (err) {
-
-        newStatuses[i] = {
-          ...newStatuses[i],
-          checking: false,
-          error: err instanceof Error ? err.message : 'Proof generation failed'
-        };
-        setStatuses([...newStatuses]);
-        return null;
       }
-    }
 
-    setStatuses(newStatuses);
-    setProofs(newProofs);
+      setStatuses(newStatuses);
+      setProofs(newProofs);
 
-    // Return the primary proof directly
-    return primaryProof;
-  }, [
-    publicKey,
-    poolConfig,
-    requirements,
-    statuses,
-    generateMinBalanceProof,
-    generateTokenHolderProof,
-    generateExclusionProof,
-    getEmptyTreeInputs,
-  ]);
+      // Return the primary proof directly
+      return primaryProof;
+    },
+    [
+      publicKey,
+      poolConfig,
+      requirements,
+      statuses,
+      generateMinBalanceProof,
+      generateTokenHolderProof,
+      generateExclusionProof,
+      getEmptyTreeInputs,
+    ]
+  );
 
   /**
    * Get the primary proof for swap (first requirement's proof)
@@ -366,28 +379,30 @@ export function usePoolRequirements() {
   const reset = useCallback(() => {
     resetProofs();
     setProofs(new Map());
-    setStatuses(requirements.map(req => ({
-      requirement: req,
-      met: false,
-      checking: false,
-      error: null,
-      proofGenerated: false,
-    })));
+    setStatuses(
+      requirements.map((req) => ({
+        requirement: req,
+        met: false,
+        checking: false,
+        error: null,
+        proofGenerated: false,
+      }))
+    );
   }, [requirements, resetProofs]);
 
   // Computed state
-  const allMet = useMemo(() =>
-    statuses.length > 0 && statuses.every(s => s.met),
+  const allMet = useMemo(
+    () => statuses.length > 0 && statuses.every((s) => s.met),
     [statuses]
   );
 
-  const allProofsGenerated = useMemo(() =>
-    statuses.length > 0 && statuses.every(s => s.proofGenerated),
+  const allProofsGenerated = useMemo(
+    () => statuses.length > 0 && statuses.every((s) => s.proofGenerated),
     [statuses]
   );
 
-  const anyChecking = useMemo(() =>
-    isCheckingAll || statuses.some(s => s.checking) || isGenerating,
+  const anyChecking = useMemo(
+    () => isCheckingAll || statuses.some((s) => s.checking) || isGenerating,
     [isCheckingAll, statuses, isGenerating]
   );
 

@@ -4,25 +4,12 @@ import { useMemo } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { getAssociatedTokenAddress } from '@solana/spl-token';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-
-// Pool configuration loaded from environment variables
-export interface PoolConfig {
-    programId: PublicKey;
-    tokenAMint: PublicKey;
-    tokenBMint: PublicKey;
-    poolPda: PublicKey;
-    tokenAReserve: PublicKey;
-    tokenBReserve: PublicKey;
-    verifierProgramId: PublicKey;
-    verifierState: PublicKey;
-    network: string;
-    rpcEndpoint: string;
-}
+import { PoolConfig, DEFAULT_PUBKEY } from '@/types/pool';
 
 /**
  * Parse a public key from environment, with fallback
  */
-function parsePublicKey(envValue: string | undefined, fallback: string): PublicKey {
+function parsePublicKey(envValue: string | undefined, fallback: PublicKey): PublicKey {
     try {
         if (envValue && envValue.length > 0) {
             return new PublicKey(envValue);
@@ -30,7 +17,7 @@ function parsePublicKey(envValue: string | undefined, fallback: string): PublicK
     } catch (e) {
         console.warn('Invalid public key:', envValue);
     }
-    return new PublicKey(fallback);
+    return fallback;
 }
 
 /**
@@ -51,29 +38,14 @@ export function getPoolConfig(): PoolConfig | null {
     }
 
     return {
-        programId: parsePublicKey(programId, '11111111111111111111111111111111'),
-        tokenAMint: parsePublicKey(tokenAMint, '11111111111111111111111111111111'),
-        tokenBMint: parsePublicKey(tokenBMint, '11111111111111111111111111111111'),
-        poolPda: parsePublicKey(
-            process.env.NEXT_PUBLIC_POOL_PDA,
-            '11111111111111111111111111111111'
-        ),
-        tokenAReserve: parsePublicKey(
-            process.env.NEXT_PUBLIC_TOKEN_A_RESERVE,
-            '11111111111111111111111111111111'
-        ),
-        tokenBReserve: parsePublicKey(
-            process.env.NEXT_PUBLIC_TOKEN_B_RESERVE,
-            '11111111111111111111111111111111'
-        ),
-        verifierProgramId: parsePublicKey(
-            process.env.NEXT_PUBLIC_VERIFIER_PROGRAM_ID,
-            '11111111111111111111111111111111'
-        ),
-        verifierState: parsePublicKey(
-            process.env.NEXT_PUBLIC_VERIFIER_STATE,
-            '11111111111111111111111111111111'
-        ),
+        programId: parsePublicKey(programId, DEFAULT_PUBKEY),
+        tokenAMint: parsePublicKey(tokenAMint, DEFAULT_PUBKEY),
+        tokenBMint: parsePublicKey(tokenBMint, DEFAULT_PUBKEY),
+        poolPda: parsePublicKey(process.env.NEXT_PUBLIC_POOL_PDA, DEFAULT_PUBKEY),
+        tokenAReserve: parsePublicKey(process.env.NEXT_PUBLIC_TOKEN_A_RESERVE, DEFAULT_PUBKEY),
+        tokenBReserve: parsePublicKey(process.env.NEXT_PUBLIC_TOKEN_B_RESERVE, DEFAULT_PUBKEY),
+        verifierProgramId: parsePublicKey(process.env.NEXT_PUBLIC_VERIFIER_PROGRAM_ID, DEFAULT_PUBKEY),
+        verifierState: parsePublicKey(process.env.NEXT_PUBLIC_VERIFIER_STATE, DEFAULT_PUBKEY),
         network: process.env.NEXT_PUBLIC_NETWORK || 'devnet',
         rpcEndpoint: process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com',
     };

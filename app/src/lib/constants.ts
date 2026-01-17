@@ -4,9 +4,11 @@
  */
 
 // Fee configuration (matches Solana program)
+// Fee configuration (matches Solana program)
 export const FEE_BPS = 30;
 export const FEE_NUMERATOR = 997;
 export const FEE_DENOMINATOR = 1000;
+export const K_DIVISOR = 1e18;
 
 // Token configuration
 export const TOKEN_DECIMALS = 9;

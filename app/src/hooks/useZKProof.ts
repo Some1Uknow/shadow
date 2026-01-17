@@ -133,7 +133,13 @@ export function useZKProofMulti() {
         body: JSON.stringify({ balance: balanceUnits, threshold: thresholdUnits }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        proof: number[];
+        publicInputs: number[];
+        error?: string;
+        details?: string;
+      };
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || data.details || 'Proof generation failed');
@@ -181,7 +187,13 @@ export function useZKProofMulti() {
         body: JSON.stringify(inputs),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        proof: number[];
+        publicInputs: number[];
+        error?: string;
+        details?: string;
+      };
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || data.details || 'Proof generation failed');
@@ -229,7 +241,13 @@ export function useZKProofMulti() {
         body: JSON.stringify(inputs),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        proof: number[];
+        publicInputs: number[];
+        error?: string;
+        details?: string;
+      };
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || data.details || 'Proof generation failed');

@@ -8,6 +8,8 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SwapInterface } from '@/components/swap';
 import { PoolInfo } from '@/components/PoolInfo';
 
+import { GitHubStarButton } from '@/components/GitHubStarButton';
+
 export default function SwapPage() {
     const { publicKey, connected } = useWallet();
     const { connection } = useConnection();
@@ -66,6 +68,7 @@ export default function SwapPage() {
                     <h1 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
                         Shadow
                     </h1>
+                    <GitHubStarButton />
                     <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(34, 211, 238, 0.15)', color: 'var(--accent-primary)' }}>
                         Devnet
                     </span>

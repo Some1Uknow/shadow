@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Particles } from '@/components/ui/particles';
 import { AnimatedBeam } from '@/components/ui/animated-beam';
+import { GitHubStarButton } from '@/components/GitHubStarButton';
 
 export default function Home() {
   const { connected } = useWallet();
@@ -27,7 +28,10 @@ export default function Home() {
 
           <header className="px-6 md:px-8 pt-6 md:pt-8 pb-4 flex justify-between items-start relative z-10">
             <div className="text-2xl font-normal text-white/90 tracking-tight">Shadow</div>
-            <WalletMultiButton />
+            <div className="flex items-center gap-4">
+              <GitHubStarButton />
+              <WalletMultiButton />
+            </div>
           </header>
 
           <div className="flex-1 flex items-center px-6 md:px-8 pb-12 md:pb-20 relative z-10">
@@ -68,7 +72,7 @@ export default function Home() {
                   <p className="text-base md:text-lg text-white/50 mb-6 font-light leading-relaxed">
                     Connect your wallet to access ZK-verified swaps on Solana.
                   </p>
-                  
+
                   <div className="space-y-4 mb-8">
                     <div className="flex items-center gap-3 text-white/70">
                       <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-bold">1</div>
@@ -83,7 +87,7 @@ export default function Home() {
                       <span className="text-sm">Swap executes — balance stays private</span>
                     </div>
                   </div>
-                  
+
                   <WalletMultiButton />
                 </div>
               </div>
@@ -116,7 +120,7 @@ export default function Home() {
                   description="Proving eligibility requires exposing the data you want private"
                 />
               </div>
-              
+
               {/* Text Right */}
               <div className="space-y-6 order-1 lg:order-2">
                 <h2 className="text-4xl md:text-5xl font-normal tracking-tight leading-tight">
@@ -136,7 +140,7 @@ export default function Home() {
       <section className="p-4 md:p-6">
         <div className="section-bg-why rounded-3xl py-16 md:py-24 relative overflow-hidden">
           <Particles className="absolute inset-0 z-0" color="#a78bfa" quantity={30} size={0.5} />
-          
+
           <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
               {/* Text Left */}
@@ -148,7 +152,7 @@ export default function Home() {
                 <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
                   Verify eligibility without exposing sensitive data. Each proof type protects different information.
                 </p>
-                
+
                 <div className="p-6 rounded-2xl bg-black/30">
                   <div className="space-y-4">
                     <div className="flex items-start gap-4">
@@ -169,7 +173,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Three Circuits Right */}
               <div className="space-y-4">
                 <CircuitCard
@@ -220,7 +224,7 @@ export default function Home() {
                   description="Prove you're not on a blacklist without exposing your wallet"
                 />
               </div>
-              
+
               {/* Text Right */}
               <div className="space-y-6 order-1 lg:order-2 lg:sticky lg:top-8">
                 <h2 className="text-4xl md:text-5xl font-normal tracking-tight leading-tight">
@@ -251,7 +255,7 @@ export default function Home() {
                   A seamless flow from wallet connection to private swap execution. No manual proof generation — everything happens automatically.
                 </p>
               </div>
-              
+
               {/* Visual Steps Right */}
               <div className="relative">
                 <HowItWorksVisual />
@@ -275,7 +279,7 @@ export default function Home() {
               Connect your wallet and experience ZK-verified trading on Solana
             </p>
             <WalletMultiButton />
-            
+
             <div className="mt-12 flex items-center justify-center gap-8 text-white/40 text-sm">
               <a href="https://github.com/your-repo/shadow" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
                 GitHub

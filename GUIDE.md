@@ -2,8 +2,7 @@
 
 Get the ZK-verified DEX running on Solana devnet.
 
-**Time:** ~15 minutes  
-**Difficulty:** Intermediate
+**Time:** ~15 minutes
 
 ---
 

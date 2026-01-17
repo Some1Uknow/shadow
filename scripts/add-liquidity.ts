@@ -22,10 +22,14 @@ const deployerKeypair = Keypair.fromSecretKey(
     Uint8Array.from(JSON.parse(fs.readFileSync(deployerPath, 'utf-8')))
 );
 
+// RPC endpoint from environment or default to devnet
+const RPC_URL = process.env.ANCHOR_PROVIDER_URL || 'https://api.devnet.solana.com';
+
 async function main() {
     console.log('=== Add Liquidity to Pool ===\n');
+    console.log('RPC:', RPC_URL);
 
-    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    const connection = new Connection(RPC_URL, 'confirmed');
     const wallet = new NodeWallet(deployerKeypair);
     const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
     const program = new Program(IDL, provider);

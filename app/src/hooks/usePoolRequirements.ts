@@ -19,7 +19,8 @@ import {
   TokenHolderRequirement,
   ExclusionRequirement,
 } from '@/types/pool';
-import { ProofGenerationError, AppError } from '@/lib/errors';
+import { ProofGenerationError } from '@/lib/errors';
+import { ProofMode, getProofModeConfig, DEFAULT_PROOF_MODE, getSavedProofMode, saveProofMode, EMPTY_TREE_ROOT } from '@/lib/proof-modes';
 
 // Types
 
@@ -37,41 +38,15 @@ interface ProofResult {
   publicInputs: Uint8Array;
 }
 
-// Helpers
-
-/**
- * Get pool requirements from environment or defaults
- * In production, this would come from on-chain pool config
- */
-export function getPoolRequirements(): PoolRequirement[] {
-  // Check environment for custom requirements
-  const customRequirements = process.env.NEXT_PUBLIC_POOL_REQUIREMENTS;
-  if (customRequirements) {
-    try {
-      return JSON.parse(customRequirements);
-    } catch {
-      console.warn('Failed to parse NEXT_PUBLIC_POOL_REQUIREMENTS');
-    }
-  }
-
-  // Default requirements
-  return [
-    {
-      type: 'min_balance',
-      enabled: true,
-      description: 'Minimum balance to swap',
-      threshold: 0.1, // 0.1 tokens minimum
-    } as MinBalanceRequirement,
-  ];
-}
-
 // Hook
 
 /**
  * Hook to check and enforce pool requirements
  * Automatically checks user eligibility and generates required proofs
+ * 
+ * @param initialMode - Optional initial proof mode (defaults to saved or DEFAULT_PROOF_MODE)
  */
-export function usePoolRequirements() {
+export function usePoolRequirements(initialMode?: ProofMode) {
   const { publicKey } = useWallet();
   const { connection } = useConnection();
   const { config: poolConfig } = usePool();
@@ -79,19 +54,40 @@ export function usePoolRequirements() {
     generateMinBalanceProof,
     generateTokenHolderProof,
     generateExclusionProof,
-    getEmptyTreeInputs,
     isGenerating,
     error: proofError,
     reset: resetProofs,
   } = useZKProofMulti();
 
+  // Proof mode state
+  const [proofMode, setProofModeState] = useState<ProofMode>(() => {
+    if (initialMode) return initialMode;
+    // Only access localStorage on client
+    if (typeof window !== 'undefined') {
+      return getSavedProofMode();
+    }
+    return DEFAULT_PROOF_MODE;
+  });
+
+  // Get requirements based on current proof mode
+  const requirements = useMemo(() => {
+    const config = getProofModeConfig(proofMode);
+    return config.requirements.filter((r) => r.enabled);
+  }, [proofMode]);
+
   // State
-  const [requirements] = useState<PoolRequirement[]>(() =>
-    getPoolRequirements().filter((r) => r.enabled)
-  );
   const [statuses, setStatuses] = useState<RequirementStatus[]>([]);
   const [proofs, setProofs] = useState<Map<RequirementType, ProofResult>>(new Map());
   const [isCheckingAll, setIsCheckingAll] = useState(false);
+
+  // Update proof mode and persist
+  const setProofMode = useCallback((mode: ProofMode) => {
+    setProofModeState(mode);
+    saveProofMode(mode);
+    // Reset statuses when mode changes
+    setStatuses([]);
+    setProofs(new Map());
+  }, []);
 
   // Initialize statuses when requirements change
   useEffect(() => {
@@ -283,22 +279,11 @@ export function usePoolRequirements() {
 
             case 'exclusion': {
               const exclReq = req as ExclusionRequirement;
-              let inputs: ExclusionInputs;
-
-              if (exclReq.blacklistRoot === '0x0') {
-                // Empty tree (testing)
-                const emptyInputs = await getEmptyTreeInputs(publicKey.toBase58());
-                if (!emptyInputs) throw new Error('Failed to get empty tree inputs');
-                inputs = emptyInputs;
-              } else {
-                // Real blacklist - would need to fetch merkle proof from service
-                inputs = {
-                  address: publicKey.toBase58(),
-                  path_indices: new Array(32).fill('0'),
-                  sibling_path: new Array(32).fill('0'),
-                  root: exclReq.blacklistRoot,
-                };
-              }
+              // Simplified exclusion proof - just needs address and blacklist root
+              const inputs: ExclusionInputs = {
+                address: publicKey.toBase58(),
+                blacklist_root: exclReq.blacklistRoot === EMPTY_TREE_ROOT ? "0" : exclReq.blacklistRoot,
+              };
 
               const proofResult = await generateExclusionProof(inputs);
               if (proofResult) {
@@ -318,7 +303,7 @@ export function usePoolRequirements() {
               checking: false,
               proofGenerated: true,
             };
-            // Store the first proof as primary
+            // Store the first proof as primary (used for on-chain verification)
             if (i === 0) {
               primaryProof = result;
             }
@@ -360,7 +345,6 @@ export function usePoolRequirements() {
       generateMinBalanceProof,
       generateTokenHolderProof,
       generateExclusionProof,
-      getEmptyTreeInputs,
     ]
   );
 
@@ -407,6 +391,11 @@ export function usePoolRequirements() {
   );
 
   return {
+    // Proof mode
+    proofMode,
+    setProofMode,
+    proofModeConfig: getProofModeConfig(proofMode),
+
     // Requirements
     requirements,
     statuses,

@@ -55,6 +55,11 @@ If you just want to test without deploying:
 git clone <repo> shadow
 cd shadow
 npm install
+
+# Setup environment for tests (optional)
+cp .env.example .env
+
+# Setup frontend
 cd app && pnpm install
 cp .env.local.example .env.local
 pnpm dev

@@ -27,12 +27,10 @@ export interface TokenHolderInputs {
   min_required: string;      // Minimum required tokens as string
 }
 
-/** SMT Exclusion circuit inputs */
+/** SMT Exclusion circuit inputs (simplified) */
 export interface ExclusionInputs {
-  address: string;           // Address to prove exclusion for (hex)
-  path_indices: string[];    // Path directions (32 elements, each "0" or "1")
-  sibling_path: string[];    // Merkle path siblings (32 elements)
-  root: string;              // Blacklist merkle root (hex)
+  address: string;           // Address to prove exclusion for
+  blacklist_root?: string;   // Blacklist root (defaults to "0" for empty blacklist)
 }
 
 /** Union type for all circuit inputs */
@@ -263,7 +261,7 @@ export function useZKProofMulti() {
       setProofContext({
         circuit: 'smt_exclusion',
         generatedAt: Date.now(),
-        exclusion: { root: inputs.root },
+        exclusion: { root: inputs.blacklist_root || '0' },
       });
 
       return result;

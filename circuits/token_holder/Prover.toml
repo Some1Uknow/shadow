@@ -1,7 +1,7 @@
 # Private inputs (witness)
-token_amount = "1000000000"
-user_address = "2uf"
+token_amount = "1000924577491"
+user_address = "133710952177633457327820114016240927680"
 
 # Public inputs
-token_mint = "abc"
-min_required = "100000000"
+token_mint = "226089711908259896069466571448528638763"
+min_required = "1000000000"

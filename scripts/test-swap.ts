@@ -51,10 +51,14 @@ const IDL = {
     errors: [],
 };
 
+// RPC endpoint from environment or default to devnet
+const RPC_URL = process.env.ANCHOR_PROVIDER_URL || 'https://api.devnet.solana.com';
+
 async function main() {
     console.log('=== Test Swap Simulation ===\n');
+    console.log('RPC:', RPC_URL);
 
-    const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+    const connection = new Connection(RPC_URL, 'confirmed');
     const wallet = new NodeWallet(deployerKeypair);
     const provider = new AnchorProvider(connection, wallet, { commitment: 'confirmed' });
 

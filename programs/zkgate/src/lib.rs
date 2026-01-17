@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Transfer};
 
 pub mod errors;
 pub mod state;
@@ -8,7 +8,7 @@ pub mod contexts;
 pub mod instructions;
 
 use errors::ErrorCode;
-use state::{Pool, PoolInfo};
+use state::PoolInfo;
 use contexts::*;
 use instructions::swap;
 

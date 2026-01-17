@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { useProgram } from '@/hooks/useProgram';
 import { usePoolRequirements } from '@/hooks/usePoolRequirements';
 import { useTokenBalances } from '@/hooks/swr/useTokenBalances';
@@ -16,6 +16,7 @@ import { RequirementsPanel } from './RequirementsPanel';
 import { SwapDetails } from './SwapDetails';
 import { SuccessPanel } from './SuccessPanel';
 import { SwapButton } from './SwapButton';
+import { ProofModeSelector } from './ProofModeSelector';
 import { useSwapState } from '@/hooks/useSwapState';
 import { useSwapExecution } from '@/hooks/useSwapExecution';
 import styles from './swap.module.css';
@@ -38,7 +39,6 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
     const {
         setAmountIn,
         setSlippage,
-        setDirection,
         setShowSettings,
         setTxSignature,
         setError,
@@ -47,8 +47,11 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
         addAmount
     } = actions;
 
-    // 2. Pool Requirements & ZK Proofs
+    // 2. Pool Requirements & ZK Proofs (with proof mode support)
     const {
+        proofMode,
+        setProofMode,
+        proofModeConfig,
         requirements,
         statuses,
         allMet,
@@ -115,7 +118,7 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
             const timeout = setTimeout(() => checkAllRequirements(inputAmount), DEBOUNCE_MS);
             return () => clearTimeout(timeout);
         }
-    }, [inputAmount, publicKey, checkAllRequirements]);
+    }, [inputAmount, publicKey, checkAllRequirements, proofMode]);
 
     // 7. Handlers wrapped with execution hook
     const handleSwapClick = async () => {
@@ -125,7 +128,7 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
             minOutput,
             direction,
             (err) => setError(err),
-            (sig) => setTxSignature(sig) // Redundant with hook callback but explicit
+            (sig) => setTxSignature(sig)
         );
     };
 
@@ -137,6 +140,14 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
     const handleFlip = () => {
         flipDirection();
         resetRequirements();
+    };
+
+    const handleProofModeChange = (mode: typeof proofMode) => {
+        setProofMode(mode);
+        // Re-check requirements with new mode
+        if (inputAmount > 0) {
+            setTimeout(() => checkAllRequirements(inputAmount), 100);
+        }
     };
 
     // ---------------------------------------------------------------------------
@@ -177,6 +188,15 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
                 </button>
             </div>
 
+            {/* Proof Mode Selector */}
+            <div className="mb-3">
+                <ProofModeSelector
+                    currentMode={proofMode}
+                    onModeChange={handleProofModeChange}
+                    disabled={isSwapping || !!txSignature}
+                />
+            </div>
+
             {/* Slippage Settings */}
             {showSettings && (
                 <div className={styles.settingsPanel}>
@@ -200,7 +220,10 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
 
             {/* Requirements Panel */}
             {requirements.length > 0 && inputAmount > 0 && (
-                <RequirementsPanel statuses={statuses} allMet={allMet} />
+                <RequirementsPanel 
+                    statuses={statuses} 
+                    allMet={allMet}
+                />
             )}
 
             {/* Input Token Box */}
@@ -321,9 +344,14 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
 
             {/* Footer */}
             <div className="pt-2 border-t border-white/5">
-                <div className="flex items-center gap-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    <span>🔐</span>
-                    <span>ZK proofs generated automatically</span>
+                <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    <div className="flex items-center gap-2">
+                        <span>🔐</span>
+                        <span>ZK proofs generated automatically</span>
+                    </div>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                        {proofModeConfig.requirements.length} proof{proofModeConfig.requirements.length > 1 ? 's' : ''} required
+                    </span>
                 </div>
             </div>
         </div>

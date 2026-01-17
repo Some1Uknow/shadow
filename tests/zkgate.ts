@@ -5,7 +5,7 @@ import {
   Keypair,
   PublicKey,
   SystemProgram,
-  LAMPORTS_PER_SOL,
+  Connection,
 } from "@solana/web3.js";
 import {
   createMint,
@@ -14,10 +14,44 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { expect } from "chai";
+import * as fs from "fs";
+import * as path from "path";
+
+/**
+ * Helper to create provider with fallback for missing env vars
+ */
+function getProvider(): anchor.AnchorProvider {
+  // Try to use env() first, fall back to manual setup
+  try {
+    return anchor.AnchorProvider.env();
+  } catch {
+    // Fallback: create provider manually for local testing
+    const rpcUrl = process.env.ANCHOR_PROVIDER_URL || "https://api.devnet.solana.com";
+    const connection = new Connection(rpcUrl, "confirmed");
+    
+    // Try to load wallet from deployer.json or use a generated keypair
+    let wallet: anchor.Wallet;
+    const deployerPath = path.join(__dirname, "..", "deployer.json");
+    
+    if (fs.existsSync(deployerPath)) {
+      const keypairData = JSON.parse(fs.readFileSync(deployerPath, "utf-8"));
+      const keypair = Keypair.fromSecretKey(Uint8Array.from(keypairData));
+      wallet = new anchor.Wallet(keypair);
+    } else {
+      // Generate ephemeral keypair for testing
+      console.warn("Warning: deployer.json not found, using ephemeral keypair");
+      wallet = new anchor.Wallet(Keypair.generate());
+    }
+    
+    return new anchor.AnchorProvider(connection, wallet, {
+      commitment: "confirmed",
+    });
+  }
+}
 
 describe("zkgate", () => {
-  // Configure the client to use the local cluster
-  const provider = anchor.AnchorProvider.env();
+  // Configure the client to use the local cluster or devnet
+  const provider = getProvider();
   anchor.setProvider(provider);
 
   const program = anchor.workspace.Zkgate as Program<Zkgate>;

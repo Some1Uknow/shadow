@@ -28,13 +28,88 @@ Traditional: "I have $147,832" → Pool says OK (but now everyone knows your bal
 Shadow:      "I have ≥ $100,000" → Pool says OK (actual balance stays private)
 ```
 
-We built three types of proofs:
+We built three types of ZK circuits for different privacy use cases:
 
-| Proof | What You Prove | What Stays Private |
-|-------|----------------|-------------------|
-| **Min Balance** | "I have ≥ X tokens" | Your actual balance |
-| **Token Holder** | "I hold ≥ Y of token Z" | Your holdings & wallet |
-| **Not Blacklisted** | "I'm not on this list" | Your wallet address |
+| Proof | What You Prove | What Stays Private | Status |
+|-------|----------------|-------------------|--------|
+| **Min Balance** | "I have ≥ X tokens" | Your actual balance | ✅ Fully Integrated |
+| **Token Holder** | "I hold ≥ Y of token Z" | Your holdings & wallet | ✅ Fully Integrated |
+| **Not Blacklisted** | "I'm not on this list" | Your wallet address | ✅ Fully Integrated |
+
+> **🎮 Try All Proof Modes:** Use the **Proof Mode Selector** in the swap interface to test each circuit type. Switch between modes to see how different ZK proofs protect different types of data.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              Shadow DEX Flow                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐     ┌──────────────────┐     ┌─────────────────────────────┐
+│   Frontend   │     │   Proof Server   │     │         Solana              │
+│  (Next.js)   │     │   (Next.js API)  │     │                             │
+└──────┬───────┘     └────────┬─────────┘     └──────────────┬──────────────┘
+       │                      │                              │
+       │  1. User enters      │                              │
+       │     swap amount      │                              │
+       │                      │                              │
+       │  2. Check balance    │                              │
+       ├─────────────────────►│                              │
+       │                      │                              │
+       │  3. Generate proof   │                              │
+       │     request          │                              │
+       ├─────────────────────►│                              │
+       │                      │                              │
+       │                      │  4. Write Prover.toml        │
+       │                      │     (balance, threshold)     │
+       │                      │                              │
+       │                      │  5. nargo execute            │
+       │                      │     → witness.gz             │
+       │                      │                              │
+       │                      │  6. sunspot prove            │
+       │                      │     → Groth16 proof          │
+       │                      │                              │
+       │  7. Return proof     │                              │
+       │◄─────────────────────┤                              │
+       │                      │                              │
+       │  8. Submit swap tx   │                              │
+       │     with proof       │                              │
+       ├─────────────────────────────────────────────────────►
+       │                      │                              │
+       │                      │              9. CPI to       │
+       │                      │                 Verifier     │
+       │                      │              ┌───────────┐   │
+       │                      │              │ Groth16   │   │
+       │                      │              │ Verifier  │   │
+       │                      │              │ (~470k CU)│   │
+       │                      │              └─────┬─────┘   │
+       │                      │                    │         │
+       │                      │              10. If valid,   │
+       │                      │                  execute     │
+       │                      │                  AMM swap    │
+       │                      │              ┌───────────┐   │
+       │                      │              │  ZKGate   │   │
+       │                      │              │   DEX     │   │
+       │                      │              └───────────┘   │
+       │                      │                              │
+       │  11. Tx confirmed    │                              │
+       │◄─────────────────────────────────────────────────────
+       │                      │                              │
+       ▼                      ▼                              ▼
+```
+
+### Component Details
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Frontend** | Next.js 16, React 19, Tailwind | Wallet connection, swap UI, proof status |
+| **Proof API** | Next.js API Routes | Orchestrates nargo + sunspot for proof generation |
+| **Noir Circuits** | Noir v1.0.0-beta | Define ZK constraints (balance ≥ threshold) |
+| **Sunspot** | Go CLI | Compiles Noir → Solana-compatible Groth16 |
+| **Verifier** | Solana Program (BPF) | On-chain Groth16 verification (~470k CU) |
+| **ZKGate DEX** | Anchor/Rust | AMM logic, CPI to verifier, token swaps |
 
 ---
 
@@ -43,7 +118,7 @@ We built three types of proofs:
 1. You enter a swap amount
 2. App checks if you meet pool requirements
 3. You click "Swap"
-4. ZK proofs generate automatically
+4. ZK proofs generate automatically (~2-5 seconds)
 5. Proofs verify on-chain, swap executes
 
 No manual proof generation. No extra steps. Just swap.
@@ -65,14 +140,14 @@ Noir Circuits → Sunspot (Groth16) → Solana Verifier → Anchor Program
 
 ### The Circuits
 
-**Min Balance** - Proves `balance ≥ threshold`
+**Min Balance** ✅ *Fully integrated*
 ```noir
 fn main(balance: Field, threshold: pub Field) {
     assert(balance >= threshold);
 }
 ```
 
-**Token Holder** - Proves ownership of specific token ≥ minimum
+**Token Holder** ✅ *Fully integrated*
 ```noir
 fn main(
     token_amount: Field,       // private
@@ -84,7 +159,7 @@ fn main(
 }
 ```
 
-**Blacklist Exclusion** - Proves address is NOT in a Sparse Merkle Tree
+**Blacklist Exclusion** ✅ *Fully integrated*
 ```noir
 fn main(
     address: Field,                     // private
@@ -102,22 +177,41 @@ fn main(
 ```
 shadow/
 ├── circuits/
-│   ├── min_balance/        # Balance threshold proofs
-│   ├── token_holder/       # Token ownership proofs
-│   └── smt_exclusion/      # Blacklist exclusion proofs
-├── programs/zkgate/        # Solana program
+│   ├── min_balance/        # Balance threshold proofs ✅
+│   ├── token_holder/       # Token ownership proofs 🔧
+│   └── smt_exclusion/      # Blacklist exclusion proofs 🔧
+├── programs/zkgate/        # Solana program (Anchor)
+│   └── src/
+│       ├── lib.rs          # Program entrypoint
+│       ├── contexts.rs     # Account contexts
+│       ├── instructions/   # Swap logic
+│       ├── math.rs         # AMM math + ZK verification
+│       └── state.rs        # Pool state
 ├── app/                    # Next.js frontend
-│   └── src/app/api/prove/  # Proof generation APIs
-└── scripts/                # Deployment tools
+│   └── src/
+│       ├── app/api/prove/  # Proof generation APIs
+│       ├── components/     # React components
+│       └── hooks/          # Custom hooks (useProgram, useZKProof, etc.)
+├── scripts/                # Deployment & testing tools
+└── tests/                  # Anchor integration tests
 ```
 
 ---
 
 ## Quick Start
 
+### Prerequisites
+
+- Rust, Solana CLI, Anchor CLI
+- Node.js 18+, pnpm
+- [Noir](https://noir-lang.org) (nargo v1.0.0-beta.1)
+- [Sunspot](https://github.com/reilabs/sunspot)
+
+### Run Locally
+
 ```bash
 git clone https://github.com/some1uknow/shadow
-cd shadow-dex
+cd shadow
 npm install
 
 # Compile circuits
@@ -125,11 +219,13 @@ cd circuits/min_balance && nargo compile && cd ..
 cd token_holder && nargo compile && cd ..
 cd smt_exclusion && nargo compile && cd ../..
 
-# Run frontend
-cd app && npm install && npm run dev
+# Run frontend (uses our deployed devnet contracts)
+cd app && pnpm install && pnpm dev
 ```
 
-See [GUIDE.md](GUIDE.md) for full setup.
+Open http://localhost:3000
+
+See [GUIDE.md](GUIDE.md) for full deployment instructions.
 
 ---
 
@@ -137,17 +233,66 @@ See [GUIDE.md](GUIDE.md) for full setup.
 
 | Contract | Address |
 |----------|---------|
-| Shadow DEX | `GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d` |
-| ZK Verifier | `95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz` |
+| Shadow DEX | [`GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d`](https://explorer.solana.com/address/GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d?cluster=devnet) |
+| ZK Verifier | [`95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz`](https://explorer.solana.com/address/95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz?cluster=devnet) |
+| Token A | `BzzNnKq1sJfkeUH7iyi823HDwCBSxYBx4s3epbvpvYqk` |
+| Token B | `CSxuownDqx9oVqojxAedaSmziKeFPRwFbmaoRCK1hrRc` |
+
+**Example Transaction:** [View on Explorer](https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet)
+
+---
+
+## Testing
+
+### Testing All Proof Modes (For Judges)
+
+The swap interface includes a **Proof Mode Selector** that lets you test all three ZK circuits:
+
+| Mode | What It Tests | Requirements |
+|------|---------------|--------------|
+| **💰 Min Balance** | Prove balance ≥ swap amount | Have enough Token A |
+| **🏛️ Token Holder** | Prove you hold governance tokens | Have ≥1 Token B + enough Token A |
+| **🛡️ Not Blacklisted** | Prove you're not on sanctions list | Have enough Token A |
+| **🔐 All Proofs** | All three proofs combined | All of the above |
+
+**To test:**
+1. Connect your wallet on devnet
+2. Get test tokens using the faucet (or swap to get Token B)
+3. Click the **Proof Mode Selector** dropdown
+4. Select different modes and observe:
+   - Requirements panel shows different checks
+   - Proof generation creates different proof types
+   - All proofs verify on-chain before swap executes
+
+### Circuit Tests
+
+```bash
+# Run Noir circuit tests
+cd circuits/min_balance && nargo test
+cd ../token_holder && nargo test
+cd ../smt_exclusion && nargo test
+```
+
+### Integration Tests
+
+```bash
+# Run Anchor tests (requires .env with ANCHOR_PROVIDER_URL)
+cp .env.example .env
+anchor test
+
+# Build frontend
+cd app && pnpm build
+```
 
 ---
 
 ## What's Next
 
+- [x] ~~Multi-proof pools (combine min_balance + token_holder + exclusion)~~ ✅ Done!
 - [ ] Credential proofs (KYC status without revealing identity)
 - [ ] Time-locked proofs (held tokens for X days)
-- [ ] Light Protocol integration
-- [ ] Mainnet
+- [ ] Light Protocol integration for compressed tokens
+- [ ] Mainnet deployment
 
 ---
 

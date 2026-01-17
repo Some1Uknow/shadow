@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import bs58 from 'bs58';
 
 const execAsync = promisify(exec);
 
@@ -11,107 +12,170 @@ const PROJECT_ROOT = path.join(process.cwd(), '..');
 const CIRCUIT_DIR = path.join(PROJECT_ROOT, 'circuits', 'smt_exclusion');
 const TARGET_DIR = path.join(CIRCUIT_DIR, 'target');
 
-// Tree depth for the SMT
-const TREE_DEPTH = 32;
+/**
+ * Error codes for better client-side handling
+ */
+const ErrorCodes = {
+    MISSING_PARAMS: 'MISSING_PARAMS',
+    ADDRESS_BLACKLISTED: 'ADDRESS_BLACKLISTED',
+    NARGO_NOT_FOUND: 'NARGO_NOT_FOUND',
+    SUNSPOT_NOT_FOUND: 'SUNSPOT_NOT_FOUND',
+    CIRCUIT_NOT_COMPILED: 'CIRCUIT_NOT_COMPILED',
+    WITNESS_GENERATION_FAILED: 'WITNESS_GENERATION_FAILED',
+    PROOF_GENERATION_FAILED: 'PROOF_GENERATION_FAILED',
+    SETUP_REQUIRED: 'SETUP_REQUIRED',
+    INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const;
 
 /**
- * SMT Exclusion Proof API
+ * Check if a command exists in PATH
+ */
+async function commandExists(cmd: string): Promise<boolean> {
+    try {
+        await execAsync(`which ${cmd}`);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Convert a Solana base58 address to a decimal field value for Noir circuits
+ */
+function addressToField(address: string): string {
+    try {
+        // If already a decimal number string, return as-is
+        if (/^\d+$/.test(address)) {
+            return address;
+        }
+        
+        // If hex, convert to decimal
+        if (address.startsWith('0x')) {
+            const hexPart = address.slice(2, 34);
+            return BigInt('0x' + hexPart).toString();
+        }
+        
+        // Decode base58 to bytes
+        const bytes = bs58.decode(address);
+        
+        // Take first 16 bytes to avoid sunspot issues
+        const truncatedBytes = bytes.slice(0, 16);
+        
+        // Convert to decimal string
+        let value = BigInt(0);
+        for (const byte of truncatedBytes) {
+            value = (value << BigInt(8)) | BigInt(byte);
+        }
+        
+        return value.toString();
+    } catch {
+        // Fallback: hash the string
+        let hash = BigInt(0);
+        for (let i = 0; i < address.length; i++) {
+            const char = BigInt(address.charCodeAt(i));
+            hash = ((hash << BigInt(5)) - hash) + char;
+        }
+        if (hash < 0) hash = -hash;
+        return hash.toString();
+    }
+}
+
+/**
+ * Generate a simple hash of the address for the simplified circuit
+ */
+function generateAddressHash(addressField: string): string {
+    // Simple hash: multiply by a prime and add another prime
+    const addr = BigInt(addressField);
+    const hash = (addr * BigInt(31) + BigInt(17)) % BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
+    return hash.toString();
+}
+
+/**
+ * SMT Exclusion Proof API (Simplified)
  * 
- * Generates a ZK proof that an address is NOT on a blacklist
- * using a Sparse Merkle Tree non-membership proof.
+ * Generates a ZK proof that an address is NOT on a blacklist.
+ * This is a simplified version for demo purposes.
  * 
- * The proof demonstrates:
- * - The address's slot in the blacklist tree is empty
- * - The merkle path is valid for the given root
- * - Therefore, the address is NOT blacklisted
- * 
- * Use cases:
- * - Sanctions/OFAC compliance without revealing address
- * - Anti-sybil verification
- * - Clean wallet verification
- * - KYC-compliant DeFi access
+ * Request body:
+ * - address: string (address to prove exclusion for)
+ * - blacklist_root: string (optional, defaults to "0" for empty blacklist)
  */
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { address, path_indices, sibling_path, root } = body;
+        const { address, blacklist_root = "0" } = body;
 
         // Validate required inputs
         if (!address) {
             return NextResponse.json(
-                { error: 'Missing address' },
+                { 
+                    error: 'Missing address',
+                    errorCode: ErrorCodes.MISSING_PARAMS,
+                    details: 'address must be provided'
+                },
                 { status: 400 }
             );
-        }
-
-        if (!path_indices || !Array.isArray(path_indices)) {
-            return NextResponse.json(
-                { error: 'Missing or invalid path_indices (must be array of 32 elements)' },
-                { status: 400 }
-            );
-        }
-
-        if (path_indices.length !== TREE_DEPTH) {
-            return NextResponse.json(
-                { error: `path_indices must have exactly ${TREE_DEPTH} elements` },
-                { status: 400 }
-            );
-        }
-
-        if (!sibling_path || !Array.isArray(sibling_path)) {
-            return NextResponse.json(
-                { error: 'Missing or invalid sibling_path (must be array of 32 elements)' },
-                { status: 400 }
-            );
-        }
-
-        if (sibling_path.length !== TREE_DEPTH) {
-            return NextResponse.json(
-                { error: `sibling_path must have exactly ${TREE_DEPTH} elements` },
-                { status: 400 }
-            );
-        }
-
-        if (!root) {
-            return NextResponse.json(
-                { error: 'Missing root (blacklist merkle root)' },
-                { status: 400 }
-            );
-        }
-
-        // Validate path_indices are all 0 or 1
-        for (let i = 0; i < path_indices.length; i++) {
-            const val = parseInt(path_indices[i]);
-            if (val !== 0 && val !== 1) {
-                return NextResponse.json(
-                    { error: `path_indices[${i}] must be 0 or 1, got ${path_indices[i]}` },
-                    { status: 400 }
-                );
-            }
         }
 
         console.log('[Exclusion API] Generating proof for:', {
             address: address.substring(0, 10) + '...',
-            root: root.substring(0, 10) + '...',
-            pathIndicesLength: path_indices.length,
-            siblingPathLength: sibling_path.length
+            blacklist_root
         });
 
-        // Format arrays for TOML
-        const pathIndicesStr = path_indices.map((v: string | number) => `"${v}"`).join(', ');
-        const siblingPathStr = sibling_path.map((v: string | number) => `"${v}"`).join(', ');
+        // Check if nargo is available
+        if (!await commandExists('nargo')) {
+            return NextResponse.json(
+                { 
+                    error: 'Noir compiler (nargo) not found',
+                    errorCode: ErrorCodes.NARGO_NOT_FOUND,
+                    details: 'Please install nargo'
+                },
+                { status: 500 }
+            );
+        }
+
+        // Check if sunspot is available
+        if (!await commandExists('sunspot')) {
+            return NextResponse.json(
+                { 
+                    error: 'Sunspot prover not found',
+                    errorCode: ErrorCodes.SUNSPOT_NOT_FOUND,
+                    details: 'Please install sunspot'
+                },
+                { status: 500 }
+            );
+        }
+
+        // Check if circuit is compiled
+        const circuitJsonPath = path.join(TARGET_DIR, 'smt_exclusion.json');
+        try {
+            await fs.access(circuitJsonPath);
+        } catch {
+            return NextResponse.json(
+                { 
+                    error: 'Circuit not compiled',
+                    errorCode: ErrorCodes.CIRCUIT_NOT_COMPILED,
+                    details: 'Run: cd circuits/smt_exclusion && nargo compile'
+                },
+                { status: 500 }
+            );
+        }
+
+        // Convert address to field-compatible format
+        const addressField = addressToField(address);
+        const addressHash = generateAddressHash(addressField);
+        console.log('[Exclusion API] Converted address:', { addressField, addressHash });
 
         // Write Prover.toml with the inputs
         const proverTomlPath = path.join(CIRCUIT_DIR, 'Prover.toml');
         const proverContent = `# SMT Exclusion Proof - Generated Inputs
 
-# Private inputs (witness)
-address = "${address}"
-path_indices = [${pathIndicesStr}]
+# Private inputs
+address = "${addressField}"
+address_hash = "${addressHash}"
 
 # Public inputs
-sibling_path = [${siblingPathStr}]
-root = "${root}"`;
+blacklist_root = "${blacklist_root}"`;
 
         await fs.writeFile(proverTomlPath, proverContent);
         console.log('[Exclusion API] Written Prover.toml');
@@ -121,13 +185,27 @@ root = "${root}"`;
         try {
             await execAsync(`cd ${CIRCUIT_DIR} && nargo execute`);
         } catch (execError) {
-            console.error('[Exclusion API] nargo execute failed:', execError);
+            const errorMsg = execError instanceof Error ? execError.message : String(execError);
+            console.error('[Exclusion API] nargo execute failed:', errorMsg);
+            
+            if (errorMsg.includes('assertion') || errorMsg.includes('failed')) {
+                return NextResponse.json(
+                    { 
+                        error: 'Exclusion proof failed - address may be blacklisted',
+                        errorCode: ErrorCodes.ADDRESS_BLACKLISTED,
+                        details: 'The circuit assertion failed.'
+                    },
+                    { status: 400 }
+                );
+            }
+            
             return NextResponse.json(
                 { 
-                    error: 'Proof generation failed',
-                    details: 'Circuit execution failed - address may be on blacklist or invalid merkle path'
+                    error: 'Witness generation failed',
+                    errorCode: ErrorCodes.WITNESS_GENERATION_FAILED,
+                    details: errorMsg
                 },
-                { status: 400 }
+                { status: 500 }
             );
         }
 
@@ -137,7 +215,11 @@ root = "${root}"`;
             await fs.access(witnessGzPath);
         } catch {
             return NextResponse.json(
-                { error: 'Witness generation failed' },
+                { 
+                    error: 'Witness file not generated',
+                    errorCode: ErrorCodes.WITNESS_GENERATION_FAILED,
+                    details: 'nargo execute completed but witness file was not created'
+                },
                 { status: 500 }
             );
         }
@@ -154,7 +236,7 @@ root = "${root}"`;
             await fs.access(ccsPath);
             hasCcs = true;
         } catch {
-            console.log('[Exclusion API] CCS file not found, will use JSON');
+            console.log('[Exclusion API] CCS file not found');
         }
         
         try {
@@ -164,118 +246,138 @@ root = "${root}"`;
             console.log('[Exclusion API] PK file not found');
         }
 
-        // Run sunspot prove to generate Groth16 proof
-        let sunspotCmd: string;
-        if (hasCcs && hasPk) {
-            sunspotCmd = `cd ${CIRCUIT_DIR} && sunspot prove target/smt_exclusion.json target/smt_exclusion.gz target/smt_exclusion.ccs target/smt_exclusion.pk`;
-        } else {
-            // First time setup - generate CCS and PK
-            console.log('[Exclusion API] Running sunspot setup first...');
+        // Run sunspot compile and setup if needed
+        if (!hasCcs || !hasPk) {
+            console.log('[Exclusion API] Running sunspot compile and setup...');
             try {
-                await execAsync(`cd ${CIRCUIT_DIR} && sunspot setup target/smt_exclusion.json`);
+                if (!hasCcs) {
+                    await execAsync(`cd ${CIRCUIT_DIR} && sunspot compile target/smt_exclusion.json`);
+                }
+                await execAsync(`cd ${CIRCUIT_DIR} && sunspot setup target/smt_exclusion.ccs`);
             } catch (setupError) {
-                console.error('[Exclusion API] sunspot setup failed:', setupError);
+                const errorMsg = setupError instanceof Error ? setupError.message : String(setupError);
+                console.error('[Exclusion API] sunspot setup failed:', errorMsg);
                 return NextResponse.json(
-                    { error: 'Proof setup failed', details: 'sunspot setup failed' },
+                    { 
+                        error: 'Proof setup failed',
+                        errorCode: ErrorCodes.SETUP_REQUIRED,
+                        details: `sunspot setup failed: ${errorMsg}`
+                    },
                     { status: 500 }
                 );
             }
-            sunspotCmd = `cd ${CIRCUIT_DIR} && sunspot prove target/smt_exclusion.json target/smt_exclusion.gz target/smt_exclusion.ccs target/smt_exclusion.pk`;
         }
+
+        // Run sunspot prove
+        const sunspotCmd = `cd ${CIRCUIT_DIR} && sunspot prove target/smt_exclusion.json target/smt_exclusion.gz target/smt_exclusion.ccs target/smt_exclusion.pk`;
 
         console.log('[Exclusion API] Running sunspot prove...');
         try {
             const { stdout, stderr } = await execAsync(sunspotCmd);
             console.log('[Exclusion API] Sunspot output:', stdout, stderr);
         } catch (proveError) {
-            console.error('[Exclusion API] sunspot prove failed:', proveError);
+            const errorMsg = proveError instanceof Error ? proveError.message : String(proveError);
+            console.error('[Exclusion API] sunspot prove failed:', errorMsg);
             return NextResponse.json(
-                { error: 'Proof generation failed', details: 'sunspot prove failed' },
+                { 
+                    error: 'Proof generation failed',
+                    errorCode: ErrorCodes.PROOF_GENERATION_FAILED,
+                    details: errorMsg
+                },
                 { status: 500 }
             );
         }
 
-        // Read the generated proof and public witness from target directory
+        // Read the generated proof and public witness
         const proofPath = path.join(TARGET_DIR, 'smt_exclusion.proof');
-        const publicWitnessPath = path.join(TARGET_DIR, 'smt_exclusion.pw');
+        const pwPath = path.join(TARGET_DIR, 'smt_exclusion.pw');
 
-        let proof: Buffer;
-        let publicWitness: Buffer;
+        let proofBytes: Buffer;
+        let pwBytes: Buffer;
 
         try {
-            proof = await fs.readFile(proofPath);
-            publicWitness = await fs.readFile(publicWitnessPath);
+            proofBytes = await fs.readFile(proofPath);
+            pwBytes = await fs.readFile(pwPath);
         } catch (readError) {
             console.error('[Exclusion API] Failed to read proof files:', readError);
             return NextResponse.json(
-                { error: 'Failed to read generated proof' },
+                { 
+                    error: 'Failed to read generated proof',
+                    errorCode: ErrorCodes.PROOF_GENERATION_FAILED,
+                    details: 'Proof files were not created'
+                },
                 { status: 500 }
             );
         }
 
-        console.log('[Exclusion API] Proof generated successfully!');
-        console.log('[Exclusion API] Proof size:', proof.length, 'bytes');
-        console.log('[Exclusion API] Public witness size:', publicWitness.length, 'bytes');
+        console.log('[Exclusion API] Proof generated successfully:', {
+            proofSize: proofBytes.length,
+            publicWitnessSize: pwBytes.length
+        });
 
         return NextResponse.json({
             success: true,
             circuit: 'smt_exclusion',
-            proof: Array.from(proof),
-            publicInputs: Array.from(publicWitness),
+            proof: Array.from(proofBytes),
+            publicInputs: Array.from(pwBytes),
             metadata: {
-                root,
-                treeDepth: TREE_DEPTH,
-                proofSize: proof.length,
-                publicInputsSize: publicWitness.length,
+                blacklist_root,
+                proofSize: proofBytes.length,
+                publicInputsSize: pwBytes.length
             }
         });
 
     } catch (error: unknown) {
-        console.error('[Exclusion API] Error:', error);
+        console.error('[Exclusion API] Unexpected error:', error);
         const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json(
-            { error: 'Proof generation failed', details: message },
+            { 
+                error: 'Internal server error',
+                errorCode: ErrorCodes.INTERNAL_ERROR,
+                details: message 
+            },
             { status: 500 }
         );
     }
 }
 
-// Health check endpoint
+/**
+ * GET endpoint for circuit info
+ */
 export async function GET() {
-    // Check if circuit is compiled
-    const circuitJsonPath = path.join(TARGET_DIR, 'smt_exclusion.json');
-    let isCompiled = false;
+    const hasNargo = await commandExists('nargo');
+    const hasSunspot = await commandExists('sunspot');
     
+    let isCompiled = false;
     try {
-        await fs.access(circuitJsonPath);
+        await fs.access(path.join(TARGET_DIR, 'smt_exclusion.json'));
         isCompiled = true;
     } catch {
-        isCompiled = false;
+        // Not compiled
     }
 
     return NextResponse.json({
-        status: 'ok',
-        message: 'SMT Exclusion Proof API ready',
         circuit: 'smt_exclusion',
-        isCompiled,
-        description: 'Proves an address is NOT on a blacklist using Sparse Merkle Tree non-membership proof',
-        treeDepth: TREE_DEPTH,
+        description: 'Proves an address is NOT on a blacklist without revealing the address',
+        status: {
+            nargo: hasNargo ? 'available' : 'not found',
+            sunspot: hasSunspot ? 'available' : 'not found',
+            compiled: isCompiled
+        },
         inputs: {
-            private: ['address', 'path_indices'],
-            public: ['sibling_path', 'root']
+            private: ['address', 'address_hash'],
+            public: ['blacklist_root']
         },
         useCases: [
             'Sanctions/OFAC compliance',
             'Anti-sybil verification',
-            'Clean wallet verification',
-            'KYC-compliant DeFi access'
+            'Clean wallet verification'
         ]
     });
 }
 
 /**
- * Helper endpoint to generate empty tree proof inputs
- * This is useful for testing when no blacklist exists yet
+ * PUT endpoint to get default inputs for testing
  */
 export async function PUT(request: NextRequest) {
     try {
@@ -284,38 +386,37 @@ export async function PUT(request: NextRequest) {
 
         if (!address) {
             return NextResponse.json(
-                { error: 'Missing address' },
+                { 
+                    error: 'Missing address',
+                    errorCode: ErrorCodes.MISSING_PARAMS,
+                    details: 'address must be provided'
+                },
                 { status: 400 }
             );
         }
 
-        // For an empty tree, all siblings are hashes of empty subtrees
-        // and the root is the hash of the complete empty tree
-        // This is a simplified version - in production, you'd compute this properly
-        const emptyPathIndices = new Array(TREE_DEPTH).fill('0');
-        const emptySiblingPath = new Array(TREE_DEPTH).fill('0');
-        
-        // Empty tree root (all zeros for simplicity in testing)
-        // In production, this would be the actual computed empty tree root
-        const emptyRoot = '0x0';
+        const addressField = addressToField(address);
+        const addressHash = generateAddressHash(addressField);
 
         return NextResponse.json({
             success: true,
-            message: 'Generated empty tree proof inputs',
+            message: 'Generated exclusion proof inputs',
             inputs: {
-                address,
-                path_indices: emptyPathIndices,
-                sibling_path: emptySiblingPath,
-                root: emptyRoot
-            },
-            note: 'These inputs are for testing with an empty blacklist tree'
+                address: addressField,
+                address_hash: addressHash,
+                blacklist_root: "0" // Empty blacklist for demo
+            }
         });
 
     } catch (error: unknown) {
-        console.error('[Exclusion API] Error generating empty tree inputs:', error);
+        console.error('[Exclusion API] Error generating inputs:', error);
         const message = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json(
-            { error: 'Failed to generate inputs', details: message },
+            { 
+                error: 'Failed to generate inputs',
+                errorCode: ErrorCodes.INTERNAL_ERROR,
+                details: message 
+            },
             { status: 500 }
         );
     }

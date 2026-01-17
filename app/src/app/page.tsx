@@ -133,7 +133,7 @@ export default function Home() {
                   <span className="text-orange-400/90">DeFi Today</span>
                 </h2>
                 <p className="text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-lg">
-                  Every time you interact with a DEX, you expose sensitive information. Your balance, your history, your strategy — all visible to everyone.
+                  Every time you interact with a DEX, you expose sensitive information. Your balance, your history, your strategy  all visible to everyone.
                 </p>
               </div>
             </div>
@@ -257,7 +257,7 @@ export default function Home() {
                   <span className="text-emerald-400/90">Works</span>
                 </h2>
                 <p className="text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-lg">
-                  A seamless flow from wallet connection to private swap execution. No manual proof generation — everything happens automatically.
+                  A seamless flow from wallet connection to private swap execution. No manual proof generation, everything happens automatically.
                 </p>
               </div>
 

@@ -62,7 +62,7 @@ body {
 }
 
 .section-bg-techstack {
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url('/bg-techstack.png');
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url('/bg-cta.jpg');
   background-size: cover;
   background-position: center;
 }

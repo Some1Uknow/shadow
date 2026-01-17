@@ -25,30 +25,7 @@
       "accounts": [
         {
           "name": "pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_a_mint",
-                "account": "Pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_b_mint",
-                "account": "Pool"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "user_token_a",
@@ -134,20 +111,6 @@
           "name": "token_b_mint"
         },
         {
-          "name": "token_a_reserve",
-          "docs": [
-            "Pool's token A reserve account (ATA owned by pool PDA)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_b_reserve",
-          "docs": [
-            "Pool's token B reserve account (ATA owned by pool PDA)"
-          ],
-          "writable": true
-        },
-        {
           "name": "user",
           "writable": true,
           "signer": true
@@ -155,10 +118,6 @@
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
       "args": [
@@ -218,30 +177,7 @@
       "accounts": [
         {
           "name": "pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_a_mint",
-                "account": "Pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_b_mint",
-                "account": "Pool"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "user_token_a",
@@ -261,6 +197,7 @@
         },
         {
           "name": "user",
+          "writable": true,
           "signer": true
         },
         {
@@ -290,225 +227,6 @@
         {
           "name": "public_inputs",
           "type": "bytes"
-        }
-      ]
-    },
-    {
-      "name": "zk_swap_private",
-      "docs": [
-        "Execute a verified private swap using Light Protocol compressed tokens",
-        "",
-        "Flow:",
-        "1. User shields tokens (compress) via Light Protocol SDK (client-side)",
-        "2. User transfers compressed tokens to Pool PDA (client-side via Light Protocol)",
-        "3. This instruction verifies the ZK proof and transfers public tokens back",
-        "",
-        "The compressed_inputs are the hashes of the compressed accounts that were",
-        "transferred to the pool. These are verified against the Light Protocol state."
-      ],
-      "discriminator": [
-        231,
-        145,
-        15,
-        196,
-        129,
-        37,
-        114,
-        25
-      ],
-      "accounts": [
-        {
-          "name": "pool",
-          "writable": true
-        },
-        {
-          "name": "user",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "user_token_a",
-          "docs": [
-            "User's Token A account (INPUT - tokens to swap)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "user_token_b",
-          "docs": [
-            "User's Token B account (OUTPUT - tokens to receive)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_a_reserve",
-          "docs": [
-            "Pool's Reserve for Token A (receives input)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_b_reserve",
-          "docs": [
-            "Pool's Reserve for Token B (sends output)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "light_system_program"
-        },
-        {
-          "name": "account_compression_program"
-        },
-        {
-          "name": "verifier_program"
-        },
-        {
-          "name": "verifier_state"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount_in",
-          "type": "u64"
-        },
-        {
-          "name": "min_out",
-          "type": "u64"
-        },
-        {
-          "name": "proof",
-          "type": "bytes"
-        },
-        {
-          "name": "public_inputs",
-          "type": "bytes"
-        },
-        {
-          "name": "compressed_inputs",
-          "type": {
-            "vec": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "zk_swap_private_reverse",
-      "docs": [
-        "Execute a verified private swap (B -> A) using Light Protocol compressed tokens",
-        "",
-        "Same flow as zk_swap_private but in reverse direction:",
-        "User sends compressed Token B → Pool sends public Token A"
-      ],
-      "discriminator": [
-        179,
-        93,
-        168,
-        138,
-        60,
-        18,
-        202,
-        44
-      ],
-      "accounts": [
-        {
-          "name": "pool",
-          "writable": true
-        },
-        {
-          "name": "user",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "user_token_a",
-          "docs": [
-            "User's Token A account (OUTPUT - tokens to receive)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "user_token_b",
-          "docs": [
-            "User's Token B account (INPUT - tokens to swap)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_a_reserve",
-          "docs": [
-            "Pool's Reserve for Token A (sends output)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "token_b_reserve",
-          "docs": [
-            "Pool's Reserve for Token B (receives input)"
-          ],
-          "writable": true
-        },
-        {
-          "name": "light_system_program"
-        },
-        {
-          "name": "account_compression_program"
-        },
-        {
-          "name": "verifier_program"
-        },
-        {
-          "name": "verifier_state"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "amount_in",
-          "type": "u64"
-        },
-        {
-          "name": "min_out",
-          "type": "u64"
-        },
-        {
-          "name": "proof",
-          "type": "bytes"
-        },
-        {
-          "name": "public_inputs",
-          "type": "bytes"
-        },
-        {
-          "name": "compressed_inputs",
-          "type": {
-            "vec": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
         }
       ]
     },
@@ -530,30 +248,7 @@
       "accounts": [
         {
           "name": "pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_a_mint",
-                "account": "Pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool.token_b_mint",
-                "account": "Pool"
-              }
-            ]
-          }
+          "writable": true
         },
         {
           "name": "user_token_a",
@@ -573,6 +268,7 @@
         },
         {
           "name": "user",
+          "writable": true,
           "signer": true
         },
         {
@@ -646,6 +342,11 @@
       "code": 6004,
       "name": "InsufficientLiquidity",
       "msg": "Insufficient liquidity in pool"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidVerifier",
+      "msg": "Invalid verifier program - cannot use System Program"
     }
   ],
   "types": [
@@ -685,7 +386,7 @@
           {
             "name": "k",
             "docs": [
-              "Constant product K (for reference, actual K may drift slightly due to fees)"
+              "Constant product K (for reference)"
             ],
             "type": "u128"
           },

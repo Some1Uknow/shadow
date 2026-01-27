@@ -27,9 +27,7 @@ import {
 
 const CIRCUIT_NAME = 'min_balance';
 
-// -----------------------------------------------------------------------------
-// POST - Generate Proof
-// -----------------------------------------------------------------------------
+// Generate Proof
 
 export async function POST(request: NextRequest) {
     try {
@@ -148,9 +146,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// -----------------------------------------------------------------------------
 // GET - Health Check
-// -----------------------------------------------------------------------------
 
 export async function GET() {
     const config = createCircuitConfig(CIRCUIT_NAME);

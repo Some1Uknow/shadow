@@ -14,9 +14,7 @@ export const execAsync = promisify(exec);
 // BN254 field modulus for Noir circuits
 const BN254_MODULUS = BigInt('21888242871839275222246405745257275088548364400416034343698204186575808495617');
 
-// -----------------------------------------------------------------------------
 // Path Helpers
-// -----------------------------------------------------------------------------
 
 const PROJECT_ROOT = path.join(process.cwd(), '..');
 
@@ -28,9 +26,7 @@ export function getTargetDir(circuitName: string): string {
     return path.join(getCircuitDir(circuitName), 'target');
 }
 
-// -----------------------------------------------------------------------------
 // Tool Availability Checks
-// -----------------------------------------------------------------------------
 
 export async function commandExists(cmd: string): Promise<boolean> {
     try {
@@ -55,9 +51,7 @@ export async function checkRequiredTools(): Promise<ToolStatus> {
     return { nargo, sunspot, allAvailable: nargo && sunspot };
 }
 
-// -----------------------------------------------------------------------------
 // Address Conversion
-// -----------------------------------------------------------------------------
 
 /**
  * Convert a Solana address (base58) or hex address to a field element string.
@@ -100,9 +94,7 @@ export function generateAddressHash(addressField: string): string {
     return hash.toString();
 }
 
-// -----------------------------------------------------------------------------
 // File Operations
-// -----------------------------------------------------------------------------
 
 export async function writeProverToml(circuitDir: string, content: string): Promise<void> {
     const proverTomlPath = path.join(circuitDir, 'Prover.toml');

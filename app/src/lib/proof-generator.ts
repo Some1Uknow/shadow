@@ -13,9 +13,7 @@ import {
     type ProofFiles,
 } from './proof-utils';
 
-// -----------------------------------------------------------------------------
 // Types
-// -----------------------------------------------------------------------------
 
 export interface CircuitConfig {
     name: string;
@@ -31,9 +29,7 @@ export interface ProofResult {
     metadata?: Record<string, unknown>;
 }
 
-// -----------------------------------------------------------------------------
 // Circuit Configuration
-// -----------------------------------------------------------------------------
 
 export function createCircuitConfig(circuitName: string): CircuitConfig {
     return {
@@ -43,18 +39,14 @@ export function createCircuitConfig(circuitName: string): CircuitConfig {
     };
 }
 
-// -----------------------------------------------------------------------------
 // Circuit Compilation Check
-// -----------------------------------------------------------------------------
 
 export async function isCircuitCompiled(config: CircuitConfig): Promise<boolean> {
     const circuitJsonPath = path.join(config.targetDir, `${config.name}.json`);
     return fileExists(circuitJsonPath);
 }
 
-// -----------------------------------------------------------------------------
 // Witness Generation
-// -----------------------------------------------------------------------------
 
 export async function generateWitness(config: CircuitConfig): Promise<void> {
     await execAsync(`cd ${config.circuitDir} && nargo execute`);
@@ -65,9 +57,7 @@ export async function isWitnessGenerated(config: CircuitConfig): Promise<boolean
     return fileExists(witnessPath);
 }
 
-// -----------------------------------------------------------------------------
 // Sunspot Setup (CCS + PK generation)
-// -----------------------------------------------------------------------------
 
 export async function ensureSunspotSetup(config: CircuitConfig): Promise<void> {
     const ccsPath = path.join(config.targetDir, `${config.name}.ccs`);
@@ -89,9 +79,7 @@ export async function ensureSunspotSetup(config: CircuitConfig): Promise<void> {
     }
 }
 
-// -----------------------------------------------------------------------------
 // Proof Generation
-// -----------------------------------------------------------------------------
 
 export async function runSunspotProve(config: CircuitConfig): Promise<void> {
     const { circuitDir, targetDir, name } = config;

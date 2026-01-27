@@ -26,9 +26,7 @@ import {
 
 const CIRCUIT_NAME = 'token_holder';
 
-// -----------------------------------------------------------------------------
-// POST - Generate Proof
-// -----------------------------------------------------------------------------
+// Generate Proof
 
 export async function POST(request: NextRequest) {
     try {
@@ -88,9 +86,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// -----------------------------------------------------------------------------
-// GET - Health Check
-// -----------------------------------------------------------------------------
+// Health Check
 
 export async function GET() {
     return NextResponse.json({

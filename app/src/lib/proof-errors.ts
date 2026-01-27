@@ -5,9 +5,7 @@
 
 import { NextResponse } from 'next/server';
 
-// -----------------------------------------------------------------------------
 // Error Codes
-// -----------------------------------------------------------------------------
 
 export const ProofErrorCodes = {
     // Validation errors (4xx)
@@ -32,9 +30,7 @@ export const ProofErrorCodes = {
 
 export type ProofErrorCode = typeof ProofErrorCodes[keyof typeof ProofErrorCodes];
 
-// -----------------------------------------------------------------------------
 // Error Response Builder
-// -----------------------------------------------------------------------------
 
 export interface ProofErrorResponse {
     error: string;
@@ -54,9 +50,7 @@ export function createErrorResponse(
     );
 }
 
-// -----------------------------------------------------------------------------
 // Common Error Responses
-// -----------------------------------------------------------------------------
 
 export function missingParamsError(params: string[]): NextResponse<ProofErrorResponse> {
     return createErrorResponse(

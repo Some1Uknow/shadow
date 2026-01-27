@@ -26,9 +26,7 @@ import {
 
 const CIRCUIT_NAME = 'smt_exclusion';
 
-// -----------------------------------------------------------------------------
-// POST - Generate Proof
-// -----------------------------------------------------------------------------
+// Generate Proof
 
 export async function POST(request: NextRequest) {
     try {
@@ -80,9 +78,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// -----------------------------------------------------------------------------
-// GET - Health Check
-// -----------------------------------------------------------------------------
+// Health Check
 
 export async function GET() {
     return NextResponse.json({
@@ -92,9 +88,7 @@ export async function GET() {
     });
 }
 
-// -----------------------------------------------------------------------------
-// PUT - Get Formatted Inputs
-// -----------------------------------------------------------------------------
+// Get Formatted Inputs
 
 export async function PUT(request: NextRequest) {
     const { address } = await request.json();

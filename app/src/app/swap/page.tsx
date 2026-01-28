@@ -51,7 +51,6 @@ export default function SwapPage() {
         }
     }, [connected, router]);
 
-    // Apply DEX mode styling
     useEffect(() => {
         document.body.classList.add('dex-mode');
         return () => document.body.classList.remove('dex-mode');
@@ -65,7 +64,6 @@ export default function SwapPage() {
         }
     }, [lastTxSignature, fetchBalance]);
 
-    // Show nothing while redirecting
     if (!connected) {
         return null;
     }
@@ -77,7 +75,6 @@ export default function SwapPage() {
             <FullScreenLoader isLoading={isLoading} />
             {isLoaded && (
                 <>
-                    {/* Header - Glassmorphic Panel */}
                     <header className="glass-panel px-6 py-4 flex items-center justify-between relative z-50 animate-page-enter" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/header.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                         <div className="absolute inset-0 z-0 overflow-hidden rounded-[20px]">
 
@@ -111,15 +108,12 @@ export default function SwapPage() {
                         </div>
                     </header>
 
-                    {/* Main Content Area */}
                     <div className="flex-1 flex gap-4">
-                        {/* Left - Pool Info Panel */}
                         <aside className="w-96 glass-panel p-6 overflow-y-auto relative overflow-hidden animate-page-enter-delay-1" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/pool.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
 
                             <PoolInfo />
                         </aside>
 
-                        {/* Center - Swap Interface Panel */}
                         <main className="flex-1 flex items-center justify-center glass-panel p-8 relative overflow-hidden animate-card-enter-delay-1" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/swap.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
 
                             <div className="w-full max-w-md relative z-10">
@@ -132,7 +126,6 @@ export default function SwapPage() {
                         </main>
                     </div>
 
-                    {/* Footer - ZK Info Panel */}
                     <footer className="glass-panel px-6 py-4 relative overflow-hidden animate-page-enter-delay-2" style={{ backgroundImage: "linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/footer.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
 
                         <div className="flex items-center justify-between relative z-10">

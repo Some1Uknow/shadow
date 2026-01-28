@@ -16,10 +16,11 @@ const BN254_MODULUS = BigInt('21888242871839275222246405745257275088548364400416
 
 // Path Helpers
 
-const PROJECT_ROOT = path.join(process.cwd(), '..');
+// In Docker, circuits are at /circuits. In development, relative to app/
+const CIRCUIT_ROOT = process.env.CIRCUIT_ROOT || path.join(process.cwd(), '..', 'circuits');
 
 export function getCircuitDir(circuitName: string): string {
-    return path.join(PROJECT_ROOT, 'circuits', circuitName);
+    return path.join(CIRCUIT_ROOT, circuitName);
 }
 
 export function getTargetDir(circuitName: string): string {

@@ -1,0 +1,51 @@
+# Dependencies (CRITICAL: must exclude these)
+**/node_modules
+node_modules
+app/node_modules
+.pnpm-store
+
+# Build outputs (we rebuild in Docker)
+app/.next
+app/out
+
+# Development files
+.git
+.gitignore
+.env*.local
+*.log
+
+# Test files
+tests
+**/*.test.*
+**/*.spec.*
+
+# Documentation
+*.md
+!README.md
+docs
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rust/Anchor build artifacts (not needed for proof gen)
+target/release
+target/debug
+programs/*/target
+**/*.so
+!circuits/**/*.so
+
+# Large unnecessary files
+videos
+*.mp4
+*.mov
+
+# Local config
+deployer.json
+pool-config.json

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone', // Required for Docker deployment
 
   // Turbopack configuration (Next.js 16+)
   // Empty config to silence the warning - Turbopack handles Node.js polyfills automatically

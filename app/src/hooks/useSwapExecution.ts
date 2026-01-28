@@ -99,18 +99,38 @@ export function useSwapExecution({
                     ComputeBudgetProgram.setComputeUnitPrice({ microLamports: PRIORITY_FEE_MICROLAMPORTS })
                 );
 
-                const { blockhash } = await connection.getLatestBlockhash();
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
                 tx.recentBlockhash = blockhash;
                 tx.feePayer = publicKey;
 
                 // 6. Sign and Send
                 const signedTx = await signTransaction(tx);
-                const signature = await connection.sendRawTransaction(signedTx.serialize());
-                await connection.confirmTransaction(signature, 'confirmed');
+
+                let signature: string;
+                try {
+                    signature = await connection.sendRawTransaction(signedTx.serialize());
+                } catch (sendErr: any) {
+                    if (sendErr.message && sendErr.message.includes('already been processed')) {
+                        if (signedTx.signatures && signedTx.signatures.length > 0 && signedTx.signatures[0].signature) {
+                            const bs58 = (await import('bs58')).default;
+                            signature = bs58.encode(signedTx.signatures[0].signature);
+                        } else {
+                            throw sendErr;
+                        }
+                    } else {
+                        throw sendErr;
+                    }
+                }
+
+                await connection.confirmTransaction({
+                    signature,
+                    blockhash,
+                    lastValidBlockHeight
+                }, 'confirmed');
 
                 onSuccess(signature);
                 onSwapComplete?.(signature);
-            } catch (err) {
+            } catch (err: any) {
                 let message = err instanceof Error ? err.message : 'Swap failed';
 
                 // Map common errors
@@ -118,6 +138,8 @@ export function useSwapExecution({
                     message = 'Insufficient liquidity. Try a smaller amount.';
                 } else if (message.includes('SlippageExceeded') || message.includes('0x1770')) {
                     message = 'Slippage exceeded. Try increasing tolerance.';
+                } else if (message.includes('already been processed')) {
+                    
                 }
 
                 onError(message);

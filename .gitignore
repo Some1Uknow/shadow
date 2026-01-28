@@ -43,3 +43,4 @@ app/out/
 *.pem
 
 deployer.json
+.agent/

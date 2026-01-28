@@ -3,7 +3,6 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { BN } from '@coral-xyz/anchor';
 import { useProgram } from '@/hooks/useProgram';
-import { UsePoolDataOptions } from '@/hooks/swr/usePoolData'; // Assuming we need types or we pass poolConfig
 import {
     COMPUTE_UNITS,
     PRIORITY_FEE_MICROLAMPORTS,

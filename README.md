@@ -105,8 +105,8 @@ We built three types of ZK circuits for different privacy use cases:
 | Component | Technology | Purpose |
 |-----------|------------|---------|
 | **Frontend** | Next.js 16, React 19, Tailwind | Wallet connection, swap UI, proof status |
-| **Proof API** | Next.js API Routes | Orchestrates nargo + sunspot for proof generation |
-| **Noir Circuits** | Noir v1.0.0-beta | Define ZK constraints (balance ≥ threshold) |
+| **Proof API** | Next.js API Routes | Uses nargo + sunspot for proof generation |
+| **Noir Circuits** | Noir v1.0.0-beta | Define ZK constraints |
 | **Sunspot** | Go CLI | Compiles Noir → Solana-compatible Groth16 |
 | **Verifier** | Solana Program (BPF) | On-chain Groth16 verification (~470k CU) |
 | **ZKGate DEX** | Anchor/Rust | AMM logic, CPI to verifier, token swaps |
@@ -140,14 +140,14 @@ Noir Circuits → Sunspot (Groth16) → Solana Verifier → Anchor Program
 
 ### The Circuits
 
-**Min Balance** ✅ *Fully integrated*
+**Min Balance** 
 ```noir
 fn main(balance: Field, threshold: pub Field) {
     assert(balance >= threshold);
 }
 ```
 
-**Token Holder** ✅ *Fully integrated*
+**Token Holder**
 ```noir
 fn main(
     token_amount: Field,       // private
@@ -159,7 +159,7 @@ fn main(
 }
 ```
 
-**Blacklist Exclusion** ✅ *Fully integrated*
+**Blacklist Exclusion**     
 ```noir
 fn main(
     address: Field,                     // private
@@ -264,6 +264,18 @@ The swap interface includes a **Proof Mode Selector** that lets you test all thr
    - Proof generation creates different proof types
    - All proofs verify on-chain before swap executes
 
+---
+
+## What's Next
+
+- [x] ~~Multi-proof pools (combine min_balance + token_holder + exclusion)~~ ✅ Done!
+- [ ] Time-locked proofs (held tokens for X days)
+- [ ] Light Protocol integration for compressed tokens
+- [ ] Shielded pools (hide token holder)
+- [ ] Mainnet deployment
+
+---
+
 ### Circuit Tests
 
 ```bash
@@ -283,16 +295,6 @@ anchor test
 # Build frontend
 cd app && pnpm build
 ```
-
----
-
-## What's Next
-
-- [x] ~~Multi-proof pools (combine min_balance + token_holder + exclusion)~~ ✅ Done!
-- [ ] Credential proofs (KYC status without revealing identity)
-- [ ] Time-locked proofs (held tokens for X days)
-- [ ] Light Protocol integration for compressed tokens
-- [ ] Mainnet deployment
 
 ---
 

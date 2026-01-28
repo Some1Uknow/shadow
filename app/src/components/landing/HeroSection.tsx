@@ -13,7 +13,12 @@ export const HeroSection = () => {
                 <Particles className="absolute inset-0 z-0" color="#22d3ee" quantity={40} size={0.6} />
 
                 <header className="px-6 md:px-8 pt-6 md:pt-8 pb-4 flex justify-between items-start relative z-10 animate-page-enter">
-                    <div className="text-2xl font-normal text-white/90 tracking-tight">Shadow</div>
+                    <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10">
+                            <Image src="/logo.png" alt="Shadow Logo" fill className="object-contain" />
+                        </div>
+                        <div className="text-2xl font-normal text-white/90 tracking-tight">Shadow</div>
+                    </div>
                     <div className="flex items-center gap-4">
                         <GitHubStarButton />
                         <WalletMultiButton />

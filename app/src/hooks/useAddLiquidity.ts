@@ -30,15 +30,12 @@ export function useAddLiquidity(): UseAddLiquidityReturn {
         setError(null);
 
         try {
-            // Convert to lamports (9 decimals)
             const amountALamports = new BN(Math.floor(amountA * LAMPORTS_MULTIPLIER));
             const amountBLamports = new BN(Math.floor(amountB * LAMPORTS_MULTIPLIER));
 
-            // Get User Token Accounts
             const userTokenA = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
             const userTokenB = await getAssociatedTokenAddress(poolConfig.tokenBMint, publicKey);
 
-            // Construct Transaction
             const tx = await program.methods
                 .addLiquidity(amountALamports, amountBLamports)
                 .accounts({
@@ -52,16 +49,12 @@ export function useAddLiquidity(): UseAddLiquidityReturn {
                 })
                 .transaction();
 
-            // Set Fee Payer & Blockhash
             tx.feePayer = publicKey;
             const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
             tx.recentBlockhash = blockhash;
 
-            // Sign & Send
             const signedTx = await signTransaction(tx);
 
-            // Attempt to send transaction. If "already processed" error occurs (race condition),
-            // recover the signature from the signed transaction and proceed to confirmation.
             let signature: string;
 
             try {

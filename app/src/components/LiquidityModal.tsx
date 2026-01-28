@@ -17,7 +17,6 @@ export function LiquidityModal({ isOpen, onClose, onSuccess, balanceA, balanceB 
     const { publicKey } = useWallet();
     const { addLiquidity, isAdding, error } = useAddLiquidity();
 
-    // Default to max possible equal amount or something reasonable
     const [amountA, setAmountA] = useState('0');
     const [amountB, setAmountB] = useState('0');
     const [signature, setSignature] = useState<string | null>(null);

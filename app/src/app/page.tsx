@@ -21,7 +21,7 @@ export default function Home() {
 
   // Preload hero background image
   const bgLoaded = useImagePreload('/bg.png');
-  const isLoading = !bgLoaded;
+  const isLoaded = bgLoaded;
 
   useEffect(() => {
     if (connected) {
@@ -31,15 +31,19 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black">
-      <FullScreenLoader isLoading={isLoading} />
+      <FullScreenLoader isLoading={!isLoaded} />
 
-      <HeroSection />
-      <ProblemSection />
-      <SolutionSection />
-      <UseCasesSection />
-      <HowItWorksSection />
-      <CTASection />
-      <Footer />
+      {isLoaded && (
+        <>
+          <HeroSection />
+          <ProblemSection />
+          <SolutionSection />
+          <UseCasesSection />
+          <HowItWorksSection />
+          <CTASection />
+          <Footer />
+        </>
+      )}
     </main>
   );
 }

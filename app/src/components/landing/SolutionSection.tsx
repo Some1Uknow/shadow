@@ -13,7 +13,7 @@ export const SolutionSection = () => {
                 <div className="max-w-7xl mx-auto px-6 md:px-8 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                         {/* Text Left */}
-                        <div className="space-y-8">
+                        <div className="space-y-8 animate-page-enter">
                             <h2 className="text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight leading-tight">
                                 <span className="text-white/95">Three Proofs.</span><br />
                                 <span className="text-violet-400/90">Complete Privacy.</span>
@@ -45,24 +45,30 @@ export const SolutionSection = () => {
 
                         {/* Three Circuits Right */}
                         <div className="space-y-4">
-                            <CircuitCard
-                                name="Min Balance"
-                                proof="Balance ≥ threshold"
-                                private="Actual balance"
-                                color="cyan"
-                            />
-                            <CircuitCard
-                                name="Token Holder"
-                                proof="Hold ≥ X of token Y"
-                                private="Holdings & wallet"
-                                color="violet"
-                            />
-                            <CircuitCard
-                                name="Not Blacklisted"
-                                proof="Not on sanctions list"
-                                private="Wallet address"
-                                color="emerald"
-                            />
+                            <div className="animate-card-enter">
+                                <CircuitCard
+                                    name="Min Balance"
+                                    proof="Balance ≥ threshold"
+                                    private="Actual balance"
+                                    color="cyan"
+                                />
+                            </div>
+                            <div className="animate-card-enter-delay-1">
+                                <CircuitCard
+                                    name="Token Holder"
+                                    proof="Hold ≥ X of token Y"
+                                    private="Holdings & wallet"
+                                    color="violet"
+                                />
+                            </div>
+                            <div className="animate-card-enter-delay-2">
+                                <CircuitCard
+                                    name="Not Blacklisted"
+                                    proof="Not on sanctions list"
+                                    private="Wallet address"
+                                    color="emerald"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>

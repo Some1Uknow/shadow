@@ -11,26 +11,34 @@ export const ProblemSection = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                         {/* Cards Left */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 order-2 lg:order-1">
-                            <ProblemCard
-                                title="Balance Exposure"
-                                description="Anyone can see exactly how much you hold in your wallet"
-                            />
-                            <ProblemCard
-                                title="Front-Running"
-                                description="Bots see your pending trades and jump ahead for profit"
-                            />
-                            <ProblemCard
-                                title="Whale Tracking"
-                                description="Large holders become targets for scams and social engineering"
-                            />
-                            <ProblemCard
-                                title="KYC Paradox"
-                                description="Proving eligibility requires exposing the data you want private"
-                            />
+                            <div className="animate-card-enter">
+                                <ProblemCard
+                                    title="Balance Exposure"
+                                    description="Anyone can see exactly how much you hold in your wallet"
+                                />
+                            </div>
+                            <div className="animate-card-enter-delay-1">
+                                <ProblemCard
+                                    title="Front-Running"
+                                    description="Bots see your pending trades and jump ahead for profit"
+                                />
+                            </div>
+                            <div className="animate-card-enter-delay-2">
+                                <ProblemCard
+                                    title="Whale Tracking"
+                                    description="Large holders become targets for scams and social engineering"
+                                />
+                            </div>
+                            <div className="animate-card-enter-delay-3">
+                                <ProblemCard
+                                    title="KYC Paradox"
+                                    description="Proving eligibility requires exposing the data you want private"
+                                />
+                            </div>
                         </div>
 
                         {/* Text Right */}
-                        <div className="space-y-6 order-1 lg:order-2">
+                        <div className="space-y-6 order-1 lg:order-2 animate-page-enter">
                             <h2 className="text-4xl md:text-5xl font-normal tracking-tight leading-tight">
                                 <span className="text-white/95">The Problem with</span><br />
                                 <span className="text-orange-400/90">DeFi Today</span>

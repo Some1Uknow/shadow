@@ -42,63 +42,7 @@ We built three types of ZK circuits for different privacy use cases:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Shadow DEX Flow                                 │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌──────────────┐     ┌──────────────────┐     ┌─────────────────────────────┐
-│   Frontend   │     │   Proof Server   │     │         Solana              │
-│  (Next.js)   │     │   (Next.js API)  │     │                             │
-└──────┬───────┘     └────────┬─────────┘     └──────────────┬──────────────┘
-       │                      │                              │
-       │  1. User enters      │                              │
-       │     swap amount      │                              │
-       │                      │                              │
-       │  2. Check balance    │                              │
-       ├─────────────────────►│                              │
-       │                      │                              │
-       │  3. Generate proof   │                              │
-       │     request          │                              │
-       ├─────────────────────►│                              │
-       │                      │                              │
-       │                      │  4. Write Prover.toml        │
-       │                      │     (balance, threshold)     │
-       │                      │                              │
-       │                      │  5. nargo execute            │
-       │                      │     → witness.gz             │
-       │                      │                              │
-       │                      │  6. sunspot prove            │
-       │                      │     → Groth16 proof          │
-       │                      │                              │
-       │  7. Return proof     │                              │
-       │◄─────────────────────┤                              │
-       │                      │                              │
-       │  8. Submit swap tx   │                              │
-       │     with proof       │                              │
-       ├─────────────────────────────────────────────────────►
-       │                      │                              │
-       │                      │              9. CPI to       │
-       │                      │                 Verifier     │
-       │                      │              ┌───────────┐   │
-       │                      │              │ Groth16   │   │
-       │                      │              │ Verifier  │   │
-       │                      │              │ (~470k CU)│   │
-       │                      │              └─────┬─────┘   │
-       │                      │                    │         │
-       │                      │              10. If valid,   │
-       │                      │                  execute     │
-       │                      │                  AMM swap    │
-       │                      │              ┌───────────┐   │
-       │                      │              │  ZKGate   │   │
-       │                      │              │   DEX     │   │
-       │                      │              └───────────┘   │
-       │                      │                              │
-       │  11. Tx confirmed    │                              │
-       │◄─────────────────────────────────────────────────────
-       │                      │                              │
-       ▼                      ▼                              ▼
-```
+![Architecture](https://shadow-dex.fly.dev/architecture.png)
 
 ### Component Details
 

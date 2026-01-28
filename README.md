@@ -234,7 +234,7 @@ See [GUIDE.md](GUIDE.md) for full deployment instructions.
 | Contract | Address |
 |----------|---------|
 | Shadow DEX | [`GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d`](https://explorer.solana.com/address/GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d?cluster=devnet) |
-| ZK Verifier | [`95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz`](https://explorer.solana.com/address/95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz?cluster=devnet) |
+| ZK Verifier | [`GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD`](https://explorer.solana.com/address/GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD?cluster=devnet) |
 | Token A | `BzzNnKq1sJfkeUH7iyi823HDwCBSxYBx4s3epbvpvYqk` |
 | Token B | `CSxuownDqx9oVqojxAedaSmziKeFPRwFbmaoRCK1hrRc` |
 

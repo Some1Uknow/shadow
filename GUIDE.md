@@ -156,7 +156,7 @@ npx ts-node scripts/airdrop-tokens.ts YOUR_WALLET_ADDRESS
 | Contract | Address |
 |----------|---------|
 | DEX Program | `GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d` |
-| ZK Verifier | `95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz` |
+| ZK Verifier | `GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD` |
 | Token A | `BzzNnKq1sJfkeUH7iyi823HDwCBSxYBx4s3epbvpvYqk` |
 | Token B | `CSxuownDqx9oVqojxAedaSmziKeFPRwFbmaoRCK1hrRc` |
 

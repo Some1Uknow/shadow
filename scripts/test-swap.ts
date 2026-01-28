@@ -67,7 +67,7 @@ async function main() {
     // Check programs exist
     console.log('\nChecking programs:');
     const programId = new PublicKey(config.programId);
-    const verifierProgramId = new PublicKey('95uEYS5q8LnrfgxAGbZwYn5gbSfsbmRPKiibF5a9P2Qz');
+    const verifierProgramId = new PublicKey('GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD');
 
     const dexInfo = await connection.getAccountInfo(programId);
     console.log('DEX Program:', programId.toBase58(), dexInfo ? '✅ exists' : '❌ MISSING');

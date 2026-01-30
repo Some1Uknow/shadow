@@ -1,9 +1,10 @@
 # Shadow DEX
 
-**Swap on Solana without exposing your eligibility data.**
+**Private eligibility checks for swaps on Solana.**  
+Hackathon project — real proofs, real devnet swaps.
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
-[![Built with Noir](https://img.shields.io/badge/ZK-Noir%20%2B%20Groth16-orange)](https://noir-lang.org)
+[![Built with Noir](https://img.shields.io/badge/Built%20with-Noir-orange)](https://noir-lang.org)
 [![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solana.com)
 
 ---
@@ -16,12 +17,12 @@ DeFi pools often need to verify users before letting them trade:
 - "Do you hold our governance token?"
 - "Are you on a sanctions list?"
 
-Today, answering these questions means **exposing your data**. Want to join a whale pool? Show your balance. Want to prove you're not sanctioned? Reveal your wallet address.
+Today, answering these questions usually means **exposing your data**. Want to join a whale pool? Show your balance. Want to prove you're not sanctioned? Reveal your wallet address.
 
-## Our Solution
+## What Shadow Does
 
-Shadow lets you **prove eligibility without revealing the underlying data**.
-Swaps still execute publicly on Solana — amounts and recipients are on-chain — while eligibility proofs and shielded note ownership stay private.
+Shadow lets you **prove eligibility without revealing the underlying data**.  
+Swaps still execute publicly on Solana — **amounts and recipients are on-chain** — but **your eligibility data and shielded note ownership stay private**.
 
 ```
 Traditional: "I have $147,832" → Pool says OK (but now everyone knows your balance)
@@ -29,7 +30,7 @@ Traditional: "I have $147,832" → Pool says OK (but now everyone knows your bal
 Shadow:      "I have ≥ $100,000" → Pool says OK (actual balance stays private)
 ```
 
-We built four types of ZK circuits for different privacy use cases:
+We support four proof types:
 
 | Proof | What You Prove | What Stays Private | Status |
 |-------|----------------|-------------------|--------|
@@ -38,104 +39,42 @@ We built four types of ZK circuits for different privacy use cases:
 | **Not Blacklisted** | "I'm not on this list" | Your wallet address | ✅ Fully Integrated |
 | **Shielded Spend** | "I own a note in the shielded pool" | Which deposit note you spent (amount/recipient remain public) | ✅ Fully Integrated |
 
-> **🎮 Try All Proof Modes:** Use the **Proof Mode Selector** in the swap interface to test each circuit type. Switch between modes to see how different ZK proofs protect different types of data.
+> **Try it:** Use the **Proof Mode Selector** in the swap interface to test each proof type.
 
 ---
 
-## Architecture
+## Architecture (Simple View)
 
 ![Architecture](https://shadow-dex.fly.dev/architecture.png)
 
-### Component Details
-
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Frontend** | Next.js 16, React 19, Tailwind | Wallet connection, swap UI, proof status |
-| **Proof API** | Next.js API Routes | Uses nargo + sunspot for proof generation |
-| **Noir Circuits** | Noir v1.0.0-beta | Define ZK constraints |
-| **Sunspot** | Go CLI | Compiles Noir → Solana-compatible Groth16 |
-| **Verifier** | Solana Program (BPF) | On-chain Groth16 verification (~200k–400k CU) |
-| **ZKGate DEX** | Anchor/Rust | AMM logic, CPI to verifier, token swaps |
+| **Frontend** | Next.js, React, Tailwind | Wallet connection, swap UI, proof status |
+| **Proof API** | Next.js API Routes | Generates proofs for the selected mode |
+| **Circuits** | Noir | Define the proof rules |
+| **Verifier** | Solana program | Verifies proofs on-chain |
+| **Swap Program** | Anchor/Rust | Executes the swap once proofs pass |
 
 ---
 
 ## How It Works
 
-1. You enter a swap amount
-2. App checks if you meet pool requirements
-3. You click "Swap"
-4. ZK proofs generate automatically (~2-5 seconds)
-5. Proofs verify on-chain, swap executes
+1. Pick a proof mode and swap amount
+2. The app creates a shielded deposit note
+3. A proof is generated in the background
+4. A relayer submits the swap using your proof
+5. The program verifies the proof and executes the swap
 
-No manual proof generation. No extra steps. Just swap.
+No manual proof steps. Just swap.
 
 ---
 
-## Technical Details
+## Tech Stack (Simple)
 
-### The Stack
-
-```
-Noir Circuits → Sunspot (Groth16) → Solana Verifier → Anchor Program
-```
-
-- **[Noir](https://noir-lang.org)** - Write ZK circuits in a simple language
-- **[Sunspot](https://github.com/reilabs/sunspot)** - Compile to Solana-compatible Groth16 proofs
-- **On-chain Verifier** - Verify proofs in ~470k compute units
-- **Anchor** - Execute swaps after verification
-
-### The Circuits
-
-**Min Balance** 
-```noir
-fn main(balance: Field, threshold: pub Field) {
-    assert(balance >= threshold);
-}
-```
-
-**Token Holder**
-```noir
-fn main(
-    token_amount: Field,       // private
-    user_address: Field,       // private
-    token_mint: pub Field,     // public
-    min_required: pub Field    // public
-) {
-    assert(token_amount >= min_required);
-}
-```
-
-**Blacklist Exclusion**     
-```noir
-fn main(
-    address: Field,                     // private
-    path_indices: [u1; 32],             // private
-    sibling_path: pub [Field; 32],      // public
-    root: pub Field                     // public
-) {
-    // Proves the leaf at address's position is empty
-    // Empty leaf = address not in tree = not blacklisted
-}
-```
-
-**Shielded Spend**
-```noir
-fn main(
-    amount: Field,
-    secret: Field,
-    nullifier: Field,
-    merkle_path: [Field; 32],
-    merkle_indices: [u1; 32],
-    root: pub Field,
-    nullifier_hash: pub Field,
-    amount_pub: pub Field,
-    recipient: pub Field,
-    mint: pub Field,
-    pool_id: pub Field
-) {
-    // Proves note membership + nullifier + binds recipient/mint/pool
-}
-```
+- **Noir** for writing the proof rules
+- **Sunspot** for compiling proofs for Solana
+- **Solana programs** to verify proofs and execute swaps
+- **Next.js app** for the UI and proof API
 
 ### Project Structure
 
@@ -143,8 +82,8 @@ fn main(
 shadow/
 ├── circuits/
 │   ├── min_balance/        # Balance threshold proofs ✅
-│   ├── token_holder/       # Token ownership proofs 🔧
-│   ├── smt_exclusion/      # Blacklist exclusion proofs 🔧
+│   ├── token_holder/       # Token ownership proofs ✅
+│   ├── smt_exclusion/      # Blacklist exclusion proofs ✅
 │   └── shielded_spend/     # Shielded pool spend proofs ✅
 ├── programs/zkgate/        # Solana program (Anchor)
 │   └── src/
@@ -191,7 +130,7 @@ cd app && pnpm install && pnpm dev
 
 Open http://localhost:3000
 
-See [GUIDE.md](GUIDE.md) for full deployment instructions.
+See [GUIDE.md](GUIDE.md) for full setup and deployment instructions.
 
 ---
 
@@ -212,7 +151,7 @@ See [GUIDE.md](GUIDE.md) for full deployment instructions.
 
 ### Testing All Proof Modes (For Judges)
 
-The swap interface includes a **Proof Mode Selector** that lets you test all three ZK circuits:
+The swap interface includes a **Proof Mode Selector** that lets you test each proof type:
 
 | Mode | What It Tests | Requirements |
 |------|---------------|--------------|
@@ -234,10 +173,10 @@ The swap interface includes a **Proof Mode Selector** that lets you test all thr
 
 ## What's Next
 
-- **Production sequencer + root sync:** replace the local tree with a durable sequencer service, reconcile on-chain roots, and expose audit‑ready APIs.
-- **Shielded outputs (amount privacy):** generate new notes for recipients so amounts and recipients aren’t public, not just eligibility.
-- **Anonymity set growth:** batch deposits, delay root updates, and add relayer routing to reduce timing correlation.
-- **Operational hardening:** key management, rate limits, monitoring, audits, and reproducible builds before mainnet.
+- **Durable pool service:** move the local tree to a persistent service that keeps pool roots in sync and exposes simple APIs.
+- **Shielded outputs:** create new notes for recipients so amounts and recipients aren’t public, not just eligibility.
+- **Stronger privacy by default:** batch deposits, add delays, and route through multiple relayers to reduce timing clues.
+- **Production hardening:** safer key handling, rate limits, monitoring, audits, and reproducible builds.
 
 ---
 

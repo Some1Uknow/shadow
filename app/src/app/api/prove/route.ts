@@ -81,10 +81,38 @@ export async function POST(request: NextRequest) {
             return circuitNotCompiledError(CIRCUIT_NAME);
         }
 
-        // Write Prover.toml with inputs
-        const proverContent = `# Private inputs\nbalance = "${balance}"\n\n# Public inputs\nthreshold = "${threshold}"`;
+        // Generate dummy Merkle inputs for Demo
+        // Corresponds to 'Trivial Hash' in circuit: Leaf = Balance; Node = Left + Right + 1
+
+        // 1. Account Data (165 bytes)
+        const dummyAccountData = Array(165).fill(0).map(() => 0);
+
+        // 2. Merkle Path (32 fields) & Indices
+        const dummyMerklePath = Array(32).fill(0).map(() => 0);
+        const dummyMerkleIndices = "0";
+
+        // 3. Compute Expected Root
+        // Leaf = Balance
+        // For each of 32 levels: Root = Current + Sibling(0) + 1 = Current + 1
+        // So Root = Balance + 32
+        const computedRoot = balanceNum + BigInt(32);
+
+        // Write Prover.toml with all required inputs
+        // Note: Arrays in TOML for Nargo can be explicit via [values] but simply formatting as below works best
+        const proverContent = `
+# Private inputs
+balance = "${balance}"
+account_data = ${JSON.stringify(dummyAccountData)}
+merkle_path = ${JSON.stringify(dummyMerklePath.map(x => x.toString()))}
+merkle_indices = "${dummyMerkleIndices}"
+
+# Public inputs
+state_root = "${computedRoot.toString()}"
+threshold = "${threshold}"
+`.trim();
+
         await writeProverToml(config.circuitDir, proverContent);
-        console.log('[Prove API] Written Prover.toml');
+        console.log('[Prove API] Written Prover.toml with inputs');
 
         // Generate witness
         console.log('[Prove API] Running nargo execute...');

@@ -8,10 +8,10 @@ import {
     sendAndConfirmTransaction
 } from '@solana/web3.js';
 import {
-    createTransferInstruction,
     getAssociatedTokenAddress,
     createAssociatedTokenAccountInstruction,
-    getAccount
+    getAccount,
+    createMintToInstruction
 } from '@solana/spl-token';
 import fs from 'fs';
 import path from 'path';
@@ -67,15 +67,13 @@ export async function POST(request: Request) {
 
         const tx = new Transaction();
 
-        // Helper to add transfer instruction (and create ATA if needed)
-        async function addTransfer(mint: PublicKey, amount: number) {
+        // Helper to mint tokens to recipient (and create ATA if needed)
+        async function addMint(mint: PublicKey, amount: number) {
             if (amount <= 0) return;
 
             const decimals = 9; // Assuming 9 decimals for now
             const rawAmount = BigInt(Math.floor(amount * Math.pow(10, decimals)));
 
-            // Get ATAs
-            const deployerATA = await getAssociatedTokenAddress(mint, deployer!.publicKey);
             const recipientATA = await getAssociatedTokenAddress(mint, recipientPubkey);
 
             // Check if recipient ATA exists
@@ -93,10 +91,10 @@ export async function POST(request: Request) {
                 );
             }
 
-            // Add transfer instruction
+            // Mint directly to recipient
             tx.add(
-                createTransferInstruction(
-                    deployerATA,
+                createMintToInstruction(
+                    mint,
                     recipientATA,
                     deployer!.publicKey,
                     rawAmount
@@ -104,8 +102,8 @@ export async function POST(request: Request) {
             );
         }
 
-        await addTransfer(tokenAMint, Number(amountA) || 0);
-        await addTransfer(tokenBMint, Number(amountB) || 0);
+        await addMint(tokenAMint, Number(amountA) || 0);
+        await addMint(tokenBMint, Number(amountB) || 0);
 
         if (tx.instructions.length === 0) {
             return NextResponse.json({ message: 'No tokens requested' });

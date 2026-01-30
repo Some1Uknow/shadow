@@ -14,6 +14,13 @@ export interface PoolConfig {
     poolPda: PublicKey;
     tokenAReserve: PublicKey;
     tokenBReserve: PublicKey;
+    shieldedPoolA: PublicKey;
+    shieldedPoolB: PublicKey;
+    shieldedVaultA: PublicKey;
+    shieldedVaultB: PublicKey;
+    shieldedRootHistoryA: PublicKey;
+    shieldedRootHistoryB: PublicKey;
+    shieldedVerifierProgramId: PublicKey;
     verifierProgramId: PublicKey;
     verifierState: PublicKey;
     network: string;
@@ -27,6 +34,13 @@ export interface PoolEnvConfig {
     NEXT_PUBLIC_POOL_PDA?: string;
     NEXT_PUBLIC_TOKEN_A_RESERVE?: string;
     NEXT_PUBLIC_TOKEN_B_RESERVE?: string;
+    NEXT_PUBLIC_SHIELDED_POOL_A?: string;
+    NEXT_PUBLIC_SHIELDED_POOL_B?: string;
+    NEXT_PUBLIC_SHIELDED_VAULT_A?: string;
+    NEXT_PUBLIC_SHIELDED_VAULT_B?: string;
+    NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_A?: string;
+    NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_B?: string;
+    NEXT_PUBLIC_SHIELDED_VERIFIER_PROGRAM_ID?: string;
     NEXT_PUBLIC_VERIFIER_PROGRAM_ID?: string;
     NEXT_PUBLIC_VERIFIER_STATE?: string;
     NEXT_PUBLIC_NETWORK?: string;

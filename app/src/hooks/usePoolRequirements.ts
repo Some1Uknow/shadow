@@ -226,11 +226,14 @@ export function usePoolRequirements(initialMode?: ProofMode) {
       const newStatuses = [...statuses];
       let primaryProof: ProofResult | null = null;
 
+      console.log('Generating proofs for requirements:', requirements.map(r => r.type));
+
       for (let i = 0; i < requirements.length; i++) {
         const req = requirements[i];
         const status = statuses[i];
 
         if (!status?.met) {
+          console.log(`Requirement ${req.type} not met, aborting proofs`);
           return null;
         }
 
@@ -240,6 +243,7 @@ export function usePoolRequirements(initialMode?: ProofMode) {
 
         try {
           let result: ProofResult | null = null;
+          console.log(`Generating proof for ${req.type}...`);
 
           switch (req.type) {
             case 'min_balance': {
@@ -279,7 +283,6 @@ export function usePoolRequirements(initialMode?: ProofMode) {
 
             case 'exclusion': {
               const exclReq = req as ExclusionRequirement;
-              // Simplified exclusion proof - just needs address and blacklist root
               const inputs: ExclusionInputs = {
                 address: publicKey.toBase58(),
                 blacklist_root: exclReq.blacklistRoot === EMPTY_TREE_ROOT ? "0" : exclReq.blacklistRoot,
@@ -297,6 +300,7 @@ export function usePoolRequirements(initialMode?: ProofMode) {
           }
 
           if (result) {
+            console.log(`Generated proof for ${req.type}. Inputs length: ${result.publicInputs.length}`);
             newProofs.set(req.type, result);
             newStatuses[i] = {
               ...newStatuses[i],
@@ -306,8 +310,10 @@ export function usePoolRequirements(initialMode?: ProofMode) {
             // Store the first proof as primary (used for on-chain verification)
             if (i === 0) {
               primaryProof = result;
+              console.log(`Set PRIMARY PROOF to ${req.type}`);
             }
           } else {
+            console.error(`Result null for ${req.type}`);
             const error = new ProofGenerationError('Proof generation returned null result from API');
             newStatuses[i] = {
               ...newStatuses[i],
@@ -318,6 +324,7 @@ export function usePoolRequirements(initialMode?: ProofMode) {
             return null;
           }
         } catch (err) {
+          console.error(`Error generating ${req.type}:`, err);
           const errorMsg = err instanceof Error ? err.message : 'Proof generation failed';
           const proofError = new ProofGenerationError(errorMsg, err);
 

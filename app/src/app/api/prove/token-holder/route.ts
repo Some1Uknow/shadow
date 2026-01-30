@@ -57,7 +57,46 @@ export async function POST(request: NextRequest) {
         const userAddressField = addressToField(user_address);
         const tokenMintField = addressToField(token_mint);
 
-        const proverContent = `token_amount = "${token_amount}"\nuser_address = "${userAddressField}"\ntoken_mint = "${tokenMintField}"\nmin_required = "${min_required}"`;
+        // Generate dummy Merkle inputs for Demo
+        // Corresponds to 'Trivial Hash' in circuit
+
+        // 1. Account Data (165 bytes)
+        const dummyAccountData = Array(165).fill(0).map(() => 0);
+
+        // 2. Merkle Path (32 fields) & Indices
+        const dummyMerklePath = Array(32).fill(0).map(() => 0);
+        const dummyMerkleIndices = "0";
+
+        // 3. Compute Expected Root
+        // Leaf = Amount + Address + Mint
+        // Root = Leaf + 32 (adding 1 for 32 levels)
+
+        // Note: addressToField returns a string representation of the field element
+        const amountBn = BigInt(token_amount); // Assuming integer amount for simplicity
+        const addressBn = BigInt(userAddressField);
+        const mintBn = BigInt(tokenMintField);
+
+        // Leaf Hash = Amount + Address + Mint
+        const leafHash = amountBn + addressBn + mintBn;
+
+        // Root Hash = Leaf + 32
+        const computedRoot = leafHash + BigInt(32);
+
+        // Write Prover.toml with all required inputs
+        const proverContent = `
+# Private inputs
+token_amount = "${token_amount}"
+user_address = "${userAddressField}"
+account_data = ${JSON.stringify(dummyAccountData)}
+merkle_path = ${JSON.stringify(dummyMerklePath.map(x => x.toString()))}
+merkle_indices = "${dummyMerkleIndices}"
+
+# Public inputs
+token_mint = "${tokenMintField}"
+state_root = "${computedRoot.toString()}"
+min_required = "${min_required}"
+`.trim();
+
         await writeProverToml(config.circuitDir, proverContent);
 
         try {

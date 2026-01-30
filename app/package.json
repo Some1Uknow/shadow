@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.0",
+    "circomlibjs": "^0.1.7",
     "@lightprotocol/compressed-token": "^0.22.0",
     "@lightprotocol/stateless.js": "^0.22.0",
     "@noir-lang/noir_js": "1.0.0-beta.13-f666b6e.nightly",

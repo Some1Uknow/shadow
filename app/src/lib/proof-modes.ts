@@ -117,12 +117,6 @@ export const PROOF_MODES: Record<ProofMode, ProofModeConfig> = {
             const { tokenB } = getTokenMints();
             return [
                 {
-                    type: 'min_balance',
-                    enabled: true,
-                    description: 'Sufficient balance for swap',
-                    threshold: 0.1,
-                } as MinBalanceRequirement,
-                {
                     type: 'token_holder',
                     enabled: true,
                     description: 'Hold governance token (Token B)',
@@ -130,6 +124,12 @@ export const PROOF_MODES: Record<ProofMode, ProofModeConfig> = {
                     tokenSymbol: 'Token B',
                     minRequired: 1,
                 } as TokenHolderRequirement,
+                {
+                    type: 'min_balance',
+                    enabled: true,
+                    description: 'Sufficient balance for swap',
+                    threshold: 0.1,
+                } as MinBalanceRequirement,
                 {
                     type: 'exclusion',
                     enabled: true,
@@ -159,7 +159,7 @@ export function getAllProofModes(): ProofModeConfig[] {
 /**
  * Default proof mode
  */
-export const DEFAULT_PROOF_MODE: ProofMode = 'min_balance';
+export const DEFAULT_PROOF_MODE: ProofMode = 'token_holder';
 
 /**
  * Storage key for persisting proof mode selection

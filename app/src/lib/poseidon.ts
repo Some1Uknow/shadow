@@ -15,9 +15,7 @@ async function getPoseidon() {
 export async function poseidonHash(inputs: Array<bigint | number | string>): Promise<string> {
     const poseidon = await getPoseidon();
     const fieldInputs = inputs.map((v) => BigInt(v));
-    // @ts-expect-error - circomlibjs poseidon returns a field element
     const hash = poseidon(fieldInputs);
-    // @ts-expect-error - F is attached to poseidon instance
     return poseidon.F.toString(hash);
 }
 

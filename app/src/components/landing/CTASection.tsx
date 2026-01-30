@@ -13,10 +13,10 @@ export const CTASection = () => {
                 <div className="max-w-4xl mx-auto px-6 md:px-8 text-center relative z-10">
                     <h2 className="text-3xl md:text-4xl lg:text-5xl font-normal tracking-tight mb-4 md:mb-6 leading-tight">
                         <span className="text-white/95">Ready to Trade</span><br />
-                        <span className="text-violet-400/90">with Privacy?</span>
+                        <span className="text-violet-400/90">with Eligibility Privacy?</span>
                     </h2>
                     <p className="text-white/60 text-base md:text-lg font-light max-w-xl mx-auto mb-8 md:mb-10">
-                        Connect your wallet and experience ZK-verified trading on Solana
+                        Connect your wallet and experience ZK‑verified eligibility on Solana
                     </p>
                     <WalletMultiButton />
 
@@ -24,7 +24,7 @@ export const CTASection = () => {
                         <a href="https://github.com/Some1Uknow/shadow" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
                             GitHub
                         </a>
-                        <a href="https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
+                        <a href="https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
                             View Demo TX
                         </a>
                     </div>

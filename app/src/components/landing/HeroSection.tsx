@@ -36,11 +36,11 @@ export const HeroSection = () => {
                                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight text-white/95 leading-tight animate-page-enter-delay-1">
                                     Prove You&apos;re Eligible.<br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
-                                        Keep Your Balance Private.
+                                        Keep Eligibility Data Private.
                                     </span>
                                 </h1>
                                 <p className="text-lg md:text-xl text-white/60 font-light leading-relaxed max-w-xl animate-page-enter-delay-2">
-                                    The first DEX on Solana where you verify eligibility using zero-knowledge proofs — without exposing your wallet balance.
+                                    A DEX on Solana where you verify eligibility with zero‑knowledge proofs without exposing your holdings. Swaps remain public; eligibility stays private.
                                 </p>
 
                                 <div className="pt-4 animate-page-enter-delay-3">
@@ -78,7 +78,7 @@ export const HeroSection = () => {
                                     </div>
                                     <div className="flex items-center gap-3 text-white/70">
                                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-bold">3</div>
-                                        <span className="text-sm">Swap executes — balance stays private</span>
+                                        <span className="text-sm">Swap executes — eligibility stays private</span>
                                     </div>
                                 </div>
 

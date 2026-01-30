@@ -2,7 +2,7 @@
 
 **Swap on Solana without exposing your eligibility data.**
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
 [![Built with Noir](https://img.shields.io/badge/ZK-Noir%20%2B%20Groth16-orange)](https://noir-lang.org)
 [![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solana.com)
 
@@ -21,6 +21,7 @@ Today, answering these questions means **exposing your data**. Want to join a wh
 ## Our Solution
 
 Shadow lets you **prove eligibility without revealing the underlying data**.
+Swaps still execute publicly on Solana — amounts and recipients are on-chain — while eligibility proofs and shielded note ownership stay private.
 
 ```
 Traditional: "I have $147,832" → Pool says OK (but now everyone knows your balance)
@@ -28,13 +29,14 @@ Traditional: "I have $147,832" → Pool says OK (but now everyone knows your bal
 Shadow:      "I have ≥ $100,000" → Pool says OK (actual balance stays private)
 ```
 
-We built three types of ZK circuits for different privacy use cases:
+We built four types of ZK circuits for different privacy use cases:
 
 | Proof | What You Prove | What Stays Private | Status |
 |-------|----------------|-------------------|--------|
 | **Min Balance** | "I have ≥ X tokens" | Your actual balance | ✅ Fully Integrated |
 | **Token Holder** | "I hold ≥ Y of token Z" | Your holdings & wallet | ✅ Fully Integrated |
 | **Not Blacklisted** | "I'm not on this list" | Your wallet address | ✅ Fully Integrated |
+| **Shielded Spend** | "I own a note in the shielded pool" | Which deposit note you spent (amount/recipient remain public) | ✅ Fully Integrated |
 
 > **🎮 Try All Proof Modes:** Use the **Proof Mode Selector** in the swap interface to test each circuit type. Switch between modes to see how different ZK proofs protect different types of data.
 
@@ -52,7 +54,7 @@ We built three types of ZK circuits for different privacy use cases:
 | **Proof API** | Next.js API Routes | Uses nargo + sunspot for proof generation |
 | **Noir Circuits** | Noir v1.0.0-beta | Define ZK constraints |
 | **Sunspot** | Go CLI | Compiles Noir → Solana-compatible Groth16 |
-| **Verifier** | Solana Program (BPF) | On-chain Groth16 verification (~470k CU) |
+| **Verifier** | Solana Program (BPF) | On-chain Groth16 verification (~200k–400k CU) |
 | **ZKGate DEX** | Anchor/Rust | AMM logic, CPI to verifier, token swaps |
 
 ---
@@ -116,6 +118,25 @@ fn main(
 }
 ```
 
+**Shielded Spend**
+```noir
+fn main(
+    amount: Field,
+    secret: Field,
+    nullifier: Field,
+    merkle_path: [Field; 32],
+    merkle_indices: [u1; 32],
+    root: pub Field,
+    nullifier_hash: pub Field,
+    amount_pub: pub Field,
+    recipient: pub Field,
+    mint: pub Field,
+    pool_id: pub Field
+) {
+    // Proves note membership + nullifier + binds recipient/mint/pool
+}
+```
+
 ### Project Structure
 
 ```
@@ -123,7 +144,8 @@ shadow/
 ├── circuits/
 │   ├── min_balance/        # Balance threshold proofs ✅
 │   ├── token_holder/       # Token ownership proofs 🔧
-│   └── smt_exclusion/      # Blacklist exclusion proofs 🔧
+│   ├── smt_exclusion/      # Blacklist exclusion proofs 🔧
+│   └── shielded_spend/     # Shielded pool spend proofs ✅
 ├── programs/zkgate/        # Solana program (Anchor)
 │   └── src/
 │       ├── lib.rs          # Program entrypoint
@@ -177,12 +199,12 @@ See [GUIDE.md](GUIDE.md) for full deployment instructions.
 
 | Contract | Address |
 |----------|---------|
-| Shadow DEX | [`GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d`](https://explorer.solana.com/address/GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d?cluster=devnet) |
-| ZK Verifier | [`GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD`](https://explorer.solana.com/address/GtS9r61Tv7s78nR5D61hFczb2Uau1eRVf176xXNAajuD?cluster=devnet) |
-| Token A | `BzzNnKq1sJfkeUH7iyi823HDwCBSxYBx4s3epbvpvYqk` |
-| Token B | `CSxuownDqx9oVqojxAedaSmziKeFPRwFbmaoRCK1hrRc` |
+| Shadow DEX | [`3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72`](https://explorer.solana.com/address/3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72?cluster=devnet) |
+| Shielded Verifier | [`6uKeW1P2VQL9TqTkohKAJ1uJMNYxw7yhPFxy9Yjo42uu`](https://explorer.solana.com/address/6uKeW1P2VQL9TqTkohKAJ1uJMNYxw7yhPFxy9Yjo42uu?cluster=devnet) |
+| Token A | `7YfeuJcTLunbJLd58BLHdYww7g4P6aCtFdZM38f1NqgY` |
+| Token B | `7VxpQBGHGxbPXmmbW22mZfxdD9ULuhghuK8A68ZB7Hid` |
 
-**Example Transaction:** [View on Explorer](https://explorer.solana.com/tx/2ufhPj4hxNcMo8FcxQSuzFDvDvuQDVQD36kHkDSimdPMbxGaBah3NgWkSSzLX1KNerwYTxkZDUM4UDr2P4k2bA8h?cluster=devnet)
+**Example Transaction:** [View on Explorer](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
 
 ---
 
@@ -212,11 +234,10 @@ The swap interface includes a **Proof Mode Selector** that lets you test all thr
 
 ## What's Next
 
-- [x] ~~Multi-proof pools (combine min_balance + token_holder + exclusion)~~ ✅ Done!
-- [ ] Time-locked proofs (held tokens for X days)
-- [ ] Light Protocol integration for compressed tokens
-- [ ] Shielded pools (hide token holder)
-- [ ] Mainnet deployment
+- **Production sequencer + root sync:** replace the local tree with a durable sequencer service, reconcile on-chain roots, and expose audit‑ready APIs.
+- **Shielded outputs (amount privacy):** generate new notes for recipients so amounts and recipients aren’t public, not just eligibility.
+- **Anonymity set growth:** batch deposits, delay root updates, and add relayer routing to reduce timing correlation.
+- **Operational hardening:** key management, rate limits, monitoring, audits, and reproducible builds before mainnet.
 
 ---
 

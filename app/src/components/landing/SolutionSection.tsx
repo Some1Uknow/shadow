@@ -16,10 +16,10 @@ export const SolutionSection = () => {
                         <div className="space-y-8 animate-page-enter">
                             <h2 className="text-4xl md:text-5xl lg:text-6xl font-normal tracking-tight leading-tight">
                                 <span className="text-white/95">Three Proofs.</span><br />
-                                <span className="text-violet-400/90">Complete Privacy.</span>
+                                <span className="text-violet-400/90">Selective Privacy.</span>
                             </h2>
                             <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
-                                Verify eligibility without exposing sensitive data. Each proof type protects different information.
+                                Verify eligibility without exposing sensitive data. Amounts and recipients are still public on-chain; the proofs keep eligibility and note ownership private.
                             </p>
 
                             <div className="p-6 rounded-2xl bg-black/30">
@@ -36,7 +36,7 @@ export const SolutionSection = () => {
                                         <span className="text-green-400 text-xl">✓</span>
                                         <div>
                                             <p className="text-white/80 font-medium">Shadow</p>
-                                            <p className="text-white/50 text-sm">Prove you have enough without showing how much</p>
+                                            <p className="text-white/50 text-sm">Prove you meet a threshold without revealing your exact holdings</p>
                                         </div>
                                     </div>
                                 </div>

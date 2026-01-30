@@ -14,25 +14,25 @@ export const ProblemSection = () => {
                             <div className="animate-card-enter">
                                 <ProblemCard
                                     title="Balance Exposure"
-                                    description="Anyone can see exactly how much you hold in your wallet"
+                                    description="Eligibility checks often force you to reveal your full holdings"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-1">
                                 <ProblemCard
-                                    title="Front-Running"
-                                    description="Bots see your pending trades and jump ahead for profit"
+                                    title="Eligibility Doxxing"
+                                    description="Proving thresholds publicly links your wallet to private data"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-2">
                                 <ProblemCard
-                                    title="Whale Tracking"
-                                    description="Large holders become targets for scams and social engineering"
+                                    title="Wallet Linkage"
+                                    description="Repeated proofs create a visible identity trail across pools"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-3">
                                 <ProblemCard
-                                    title="KYC Paradox"
-                                    description="Proving eligibility requires exposing the data you want private"
+                                    title="Compliance Paradox"
+                                    description="You must reveal data to prove you should not reveal data"
                                 />
                             </div>
                         </div>
@@ -44,7 +44,7 @@ export const ProblemSection = () => {
                                 <span className="text-orange-400/90">DeFi Today</span>
                             </h2>
                             <p className="text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-lg">
-                                Every time you interact with a DEX, you expose sensitive information. Your balance, your history, your strategy  all visible to everyone.
+                                Eligibility gates in DeFi often force data exposure. Your holdings and identity get revealed just to prove you qualify.
                             </p>
                         </div>
                     </div>

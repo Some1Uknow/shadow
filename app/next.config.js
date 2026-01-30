@@ -3,10 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker deployment
 
-  // Turbopack configuration (Next.js 16+)
-  // Empty config to silence the warning - Turbopack handles Node.js polyfills automatically
-  turbopack: {},
-
   // Webpack configuration (used for production builds)
   webpack: (config, { isServer }) => {
     // Handle WASM files for Noir/Barretenberg
@@ -31,4 +27,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

@@ -44,3 +44,4 @@ app/out/
 
 deployer.json
 .agent/
+relayer-keypair.json

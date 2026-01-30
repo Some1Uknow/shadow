@@ -17,6 +17,7 @@ import {
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
+  getAssociatedTokenAddress,
   mintTo,
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
@@ -25,7 +26,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Configuration
-const DEVNET_URL = 'https://api.devnet.solana.com';
+const DEVNET_URL = process.env.RPC_URL || 'https://api.devnet.solana.com';
 const INITIAL_LIQUIDITY_A = 10_000_000_000; // 10,000 tokens (9 decimals)
 const INITIAL_LIQUIDITY_B = 10_000_000_000; // 10,000 tokens (9 decimals)
 
@@ -140,6 +141,37 @@ async function main() {
   );
   console.log(`Pool PDA: ${poolPda.toBase58()}`);
 
+  // Shielded pool PDAs (one per mint)
+  const [shieldedPoolA] = PublicKey.findProgramAddressSync(
+    [Buffer.from('shielded_pool'), tokenAMint.toBuffer()],
+    programId
+  );
+  const [shieldedPoolB] = PublicKey.findProgramAddressSync(
+    [Buffer.from('shielded_pool'), tokenBMint.toBuffer()],
+    programId
+  );
+  const [shieldedRootHistoryA] = PublicKey.findProgramAddressSync(
+    [Buffer.from('shielded_root'), shieldedPoolA.toBuffer()],
+    programId
+  );
+  const [shieldedRootHistoryB] = PublicKey.findProgramAddressSync(
+    [Buffer.from('shielded_root'), shieldedPoolB.toBuffer()],
+    programId
+  );
+  console.log(`Shielded Pool A: ${shieldedPoolA.toBase58()}`);
+  console.log(`Shielded Pool B: ${shieldedPoolB.toBase58()}`);
+
+  const shieldedVaultA = await getAssociatedTokenAddress(
+    tokenAMint,
+    shieldedPoolA,
+    true
+  );
+  const shieldedVaultB = await getAssociatedTokenAddress(
+    tokenBMint,
+    shieldedPoolB,
+    true
+  );
+
   // Step 6: Create pool reserve ATAs (owned by pool PDA)
   console.log('\nStep 6: Creating pool reserve accounts...');
   const poolTokenAReserve = await getOrCreateAssociatedTokenAccount(
@@ -195,6 +227,58 @@ async function main() {
       .rpc();
     console.log('Pool initialized!');
 
+    console.log('\nStep 7b: Initializing shielded pools...');
+    await programConnected.methods
+      .initializeShieldedPool()
+      .accounts({
+        shieldedPool: shieldedPoolA,
+        mint: tokenAMint,
+        vault: shieldedVaultA,
+        authority: deployer.publicKey,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'),
+      })
+      .signers([deployer])
+      .rpc();
+
+    await programConnected.methods
+      .initializeShieldedRootHistory()
+      .accounts({
+        shieldedPool: shieldedPoolA,
+        rootHistory: shieldedRootHistoryA,
+        authority: deployer.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([deployer])
+      .rpc();
+
+    await programConnected.methods
+      .initializeShieldedPool()
+      .accounts({
+        shieldedPool: shieldedPoolB,
+        mint: tokenBMint,
+        vault: shieldedVaultB,
+        authority: deployer.publicKey,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'),
+      })
+      .signers([deployer])
+      .rpc();
+
+    await programConnected.methods
+      .initializeShieldedRootHistory()
+      .accounts({
+        shieldedPool: shieldedPoolB,
+        rootHistory: shieldedRootHistoryB,
+        authority: deployer.publicKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([deployer])
+      .rpc();
+    console.log('Shielded pools initialized!');
+
     console.log('\nStep 8: Transferring initial liquidity to reserves...');
     // Transfer A to Reserve A
     const transferAIx = await import('@solana/spl-token').then(spl => spl.createTransferInstruction(
@@ -235,6 +319,12 @@ async function main() {
     poolPda: poolPda.toBase58(),
     poolTokenAReserve: poolTokenAReserve.address.toBase58(),
     poolTokenBReserve: poolTokenBReserve.address.toBase58(),
+    shieldedPoolA: shieldedPoolA.toBase58(),
+    shieldedPoolB: shieldedPoolB.toBase58(),
+    shieldedVaultA: shieldedVaultA.toBase58(),
+    shieldedVaultB: shieldedVaultB.toBase58(),
+    shieldedRootHistoryA: shieldedRootHistoryA.toBase58(),
+    shieldedRootHistoryB: shieldedRootHistoryB.toBase58(),
     deployerTokenA: deployerTokenA.address.toBase58(),
     deployerTokenB: deployerTokenB.address.toBase58(),
     initialLiquidityA: INITIAL_LIQUIDITY_A,
@@ -255,6 +345,14 @@ async function main() {
     `NEXT_PUBLIC_POOL_PDA=${poolPda.toBase58()}`,
     `NEXT_PUBLIC_TOKEN_A_RESERVE=${poolTokenAReserve.address.toBase58()}`,
     `NEXT_PUBLIC_TOKEN_B_RESERVE=${poolTokenBReserve.address.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_POOL_A=${shieldedPoolA.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_POOL_B=${shieldedPoolB.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_VAULT_A=${shieldedVaultA.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_VAULT_B=${shieldedVaultB.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_A=${shieldedRootHistoryA.toBase58()}`,
+    `NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_B=${shieldedRootHistoryB.toBase58()}`,
+    '# Set after deploying shielded verifier',
+    'NEXT_PUBLIC_SHIELDED_VERIFIER_PROGRAM_ID=11111111111111111111111111111111',
     '# Set these after deploying Sunspot verifier',
     'NEXT_PUBLIC_VERIFIER_PROGRAM_ID=11111111111111111111111111111111',
     'NEXT_PUBLIC_VERIFIER_STATE=11111111111111111111111111111111',
@@ -283,4 +381,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

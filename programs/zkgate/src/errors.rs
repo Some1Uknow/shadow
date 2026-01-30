@@ -19,4 +19,13 @@ pub enum ErrorCode {
 
     #[msg("Invalid verifier program - cannot use System Program")]
     InvalidVerifier,
+
+    #[msg("Invalid state root provided")]
+    InvalidStateRoot,
+
+    #[msg("Invalid shielded account")]
+    InvalidShieldedAccount,
+
+    #[msg("Nullifier already spent")]
+    NullifierAlreadySpent,
 }

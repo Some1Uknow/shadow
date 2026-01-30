@@ -51,10 +51,12 @@ pub fn verify_zk_proof<'info>(
     require!(*verifier_program.key != system_program_id, ErrorCode::InvalidVerifier);
 
     msg!("Verifying ZK proof via CPI to: {}", verifier_program.key);
+    msg!("Proof Len: {}, Inputs Len: {}", proof.len(), public_inputs.len());
 
+    // gnark-solana verifier expects instruction data = proof || public_witness
     let mut instruction_data = Vec::with_capacity(proof.len() + public_inputs.len());
-    instruction_data.extend_from_slice(proof);
-    instruction_data.extend_from_slice(public_inputs);
+    instruction_data.extend_from_slice(proof);         // Proof FIRST
+    instruction_data.extend_from_slice(public_inputs); // Public inputs (w/ header) SECOND
 
     let ix = Instruction {
         program_id: *verifier_program.key,

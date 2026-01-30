@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
 
+pub mod roots;
+pub mod shielded;
+
 #[account]
 pub struct Pool {
     pub token_a_mint: Pubkey,

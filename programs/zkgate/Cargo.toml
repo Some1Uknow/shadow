@@ -19,6 +19,7 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 [dependencies]
 anchor-lang = { version = "0.32.0", features = ["init-if-needed"] }
 anchor-spl = { version = "0.32.0", features = ["token"] }
+bytemuck = { version = "1.14.0", features = ["derive"] }
 
 # Light Protocol dependencies for ZK Compression (planned for future integration)
 # Uncomment when implementing compressed token support:

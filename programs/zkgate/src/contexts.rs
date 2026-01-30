@@ -1,6 +1,8 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::associated_token::AssociatedToken;
 use crate::state::Pool;
+use crate::state::shielded::{ShieldedPool, ShieldedRootHistory, Nullifier};
 
 #[derive(Accounts)]
 pub struct CreatePool<'info> {
@@ -54,6 +56,8 @@ pub struct ZKSwap<'info> {
     /// CHECK: Required by deployed program
     pub verifier_state: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub history: Box<Account<'info, crate::state::roots::StateRootHistory>>,
 }
 
 #[derive(Accounts)]
@@ -75,9 +79,127 @@ pub struct ZKSwapReverse<'info> {
     /// CHECK: Required by deployed program
     pub verifier_state: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub history: Box<Account<'info, crate::state::roots::StateRootHistory>>,
 }
 
 #[derive(Accounts)]
 pub struct GetPoolInfo<'info> {
     pub pool: Account<'info, Pool>,
+}
+
+// -----------------------------------------------------------------------------
+// Shielded Swap Context
+// -----------------------------------------------------------------------------
+
+#[derive(Accounts)]
+pub struct SwapPrivate<'info> {
+    #[account(mut)]
+    pub pool: Account<'info, Pool>,
+    #[account(mut)]
+    pub input_shielded_pool: Account<'info, ShieldedPool>,
+    #[account(mut)]
+    pub input_root_history: AccountLoader<'info, ShieldedRootHistory>,
+    // Remaining accounts:
+    // 0: shielded_vault_in (writable)
+    // 1: reserve_in (writable)
+    // 2: reserve_out (writable)
+    // 3: recipient_token (writable)
+    /// CHECK: Validated by CPI verifier + public inputs
+    pub verifier_program: UncheckedAccount<'info>,
+    /// CHECK: PDA derived from input shielded pool + nullifier hash (validated in handler)
+    #[account(mut)]
+    pub nullifier_account: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub relayer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+}
+
+// -----------------------------------------------------------------------------
+// Shielded Pool Contexts
+// -----------------------------------------------------------------------------
+
+#[derive(Accounts)]
+pub struct InitializeShieldedPool<'info> {
+    #[account(
+        init,
+        payer = authority,
+        space = ShieldedPool::LEN,
+        seeds = [b"shielded_pool", mint.key().as_ref()],
+        bump
+    )]
+    pub shielded_pool: Account<'info, ShieldedPool>,
+    pub mint: Account<'info, Mint>,
+    #[account(
+        init,
+        payer = authority,
+        associated_token::mint = mint,
+        associated_token::authority = shielded_pool
+    )]
+    pub vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+#[derive(Accounts)]
+pub struct InitializeShieldedRootHistory<'info> {
+    #[account(mut)]
+    pub shielded_pool: Account<'info, ShieldedPool>,
+    #[account(
+        init,
+        payer = authority,
+        space = ShieldedRootHistory::LEN,
+        seeds = [b"shielded_root", shielded_pool.key().as_ref()],
+        bump
+    )]
+    pub root_history: AccountLoader<'info, ShieldedRootHistory>,
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct DepositShielded<'info> {
+    #[account(mut)]
+    pub shielded_pool: Account<'info, ShieldedPool>,
+    #[account(mut)]
+    pub vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_token: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateShieldedRoot<'info> {
+    #[account(mut)]
+    pub shielded_pool: Account<'info, ShieldedPool>,
+    #[account(mut)]
+    pub root_history: AccountLoader<'info, ShieldedRootHistory>,
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawShielded<'info> {
+    #[account(mut)]
+    pub shielded_pool: Account<'info, ShieldedPool>,
+    #[account(mut)]
+    pub root_history: AccountLoader<'info, ShieldedRootHistory>,
+    // Remaining accounts:
+    // 0: vault (writable)
+    // 1: recipient_token (writable)
+    /// CHECK: Validated by CPI verifier + public inputs
+    pub verifier_program: UncheckedAccount<'info>,
+    /// CHECK: PDA derived from shielded pool + nullifier hash (validated in handler)
+    #[account(mut)]
+    pub nullifier_account: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub relayer: Signer<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }

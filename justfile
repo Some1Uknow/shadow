@@ -24,7 +24,7 @@ wallet:
 # ============================================================================
 
 # Compile all circuits
-compile-all: compile-min_balance compile-token_holder compile-smt_exclusion
+compile-all: compile-min_balance compile-token_holder compile-smt_exclusion compile-shielded_spend
 
 # Compile min_balance circuit
 compile-min_balance:
@@ -41,8 +41,13 @@ compile-smt_exclusion:
     @echo "Compiling smt_exclusion circuit..."
     cd circuits/smt_exclusion && nargo compile
 
+# Compile shielded_spend circuit
+compile-shielded_spend:
+    @echo "Compiling shielded_spend circuit..."
+    cd circuits/shielded_spend && nargo compile
+
 # Test all circuits
-test-circuits: test-min_balance test-token_holder test-smt_exclusion
+test-circuits: test-min_balance test-token_holder test-smt_exclusion test-shielded_spend
 
 # Test min_balance circuit
 test-min_balance:
@@ -59,6 +64,11 @@ test-smt_exclusion:
     @echo "Testing smt_exclusion circuit..."
     cd circuits/smt_exclusion && nargo test
 
+# Test shielded_spend circuit
+test-shielded_spend:
+    @echo "Testing shielded_spend circuit..."
+    cd circuits/shielded_spend && nargo test
+
 # Copy circuit artifacts to frontend
 copy-circuits:
     @echo "Copying circuit artifacts to frontend..."
@@ -66,6 +76,7 @@ copy-circuits:
     cp circuits/min_balance/target/min_balance.json app/public/
     cp circuits/token_holder/target/token_holder.json app/public/
     cp circuits/smt_exclusion/target/smt_exclusion.json app/public/
+    cp circuits/shielded_spend/target/shielded_spend.json app/public/
     @echo "Circuit artifacts copied to app/public/"
 
 # Generate .env.local from pool-config.json
@@ -80,6 +91,13 @@ generate-env:
         'NEXT_PUBLIC_POOL_PDA=' + c.poolPda, \
         'NEXT_PUBLIC_TOKEN_A_RESERVE=' + c.poolTokenAReserve, \
         'NEXT_PUBLIC_TOKEN_B_RESERVE=' + c.poolTokenBReserve, \
+        'NEXT_PUBLIC_SHIELDED_POOL_A=' + c.shieldedPoolA, \
+        'NEXT_PUBLIC_SHIELDED_POOL_B=' + c.shieldedPoolB, \
+        'NEXT_PUBLIC_SHIELDED_VAULT_A=' + c.shieldedVaultA, \
+        'NEXT_PUBLIC_SHIELDED_VAULT_B=' + c.shieldedVaultB, \
+        'NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_A=' + c.shieldedRootHistoryA, \
+        'NEXT_PUBLIC_SHIELDED_ROOT_HISTORY_B=' + c.shieldedRootHistoryB, \
+        'NEXT_PUBLIC_SHIELDED_VERIFIER_PROGRAM_ID=', \
         'NEXT_PUBLIC_VERIFIER_PROGRAM_ID=', \
         'NEXT_PUBLIC_VERIFIER_STATE=' \
       ].join('\n'); \
@@ -91,7 +109,7 @@ generate-env:
 # ============================================================================
 
 # Setup proving keys for all circuits
-setup-all: setup-min_balance setup-token_holder setup-smt_exclusion
+setup-all: setup-min_balance setup-token_holder setup-smt_exclusion setup-shielded_spend
 
 # Setup min_balance proving key
 setup-min_balance:
@@ -116,6 +134,14 @@ setup-smt_exclusion:
     sunspot setup circuits/smt_exclusion/target/smt_exclusion.json \
         --pk keys/smt_exclusion/proving_key.pk \
         --vk keys/smt_exclusion/verifying_key.vk
+
+# Setup shielded_spend proving key
+setup-shielded_spend:
+    @echo "Setting up shielded_spend proving key..."
+    mkdir -p keys/shielded_spend
+    sunspot setup circuits/shielded_spend/target/shielded_spend.json \
+        --pk keys/shielded_spend/proving_key.pk \
+        --vk keys/shielded_spend/verifying_key.vk
 
 # Generate proof for min_balance
 prove-min_balance:

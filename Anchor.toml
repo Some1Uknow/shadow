@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-zkgate = "GVkWHzgYaUDmM5KF4uHv7fM9DEtDtqpsF8T3uHbSYR2d"
+zkgate = "3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72"
 
 [programs.localnet]
-zkgate = "4JpVwnSHdNBYHtWGqfdnoFVqgLg2GP3cau6Uac6UZBKy"
+zkgate = "3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72"
 
 [registry]
 url = "https://api.apr.dev"

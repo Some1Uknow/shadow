@@ -1,0 +1,7 @@
+[package]
+name = "shielded_spend"
+type = "bin"
+authors = ["Shadow DEX"]
+
+[dependencies]
+poseidon = { git = "https://github.com/noir-lang/poseidon", tag = "v0.2.3" }

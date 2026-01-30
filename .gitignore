@@ -38,6 +38,7 @@ test-ledger/
 # Next.js
 app/.next/
 app/out/
+app/.data/
 
 # Misc
 *.pem

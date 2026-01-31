@@ -1,6 +1,6 @@
 # Shadow DEX
 
-**Private eligibility checks for swaps on Solana.**  
+**ZK Gated swaps on Solana.**  
 Hackathon project with real proofs and real devnet swaps.
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)

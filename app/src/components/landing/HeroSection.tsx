@@ -34,9 +34,9 @@ export const HeroSection = () => {
                                     <span className="text-sm text-white/70">Live on Devnet</span>
                                 </div>
                                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight text-white/95 leading-tight animate-page-enter-delay-1">
-                                    Private eligibility.<br />
+                                    ZK Gated Swaps<br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
-                                        Real swaps on Solana.
+                                        on Solana.
                                     </span>
                                 </h1>
                                 <p className="text-lg md:text-xl text-white/60 font-light leading-relaxed max-w-xl animate-page-enter-delay-2">

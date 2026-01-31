@@ -174,9 +174,8 @@ See [GUIDE.md](GUIDE.md) for full setup and deployment instructions.
 | Token B | `7VxpQBGHGxbPXmmbW22mZfxdD9ULuhghuK8A68ZB7Hid` |
 
 **Example Transactions:**  
-- Shielded mode swap: https://explorer.solana.com/tx/b3UgihK5FTgBA6Y45LMxghJjgrjFRNF8HL7W5wCNAYokq4iuaeeGX5X3q672FBkB6Vb8j1PfEGHmjFyoNi9sAtD?cluster=devnet  
-- All proofs mode swap: https://explorer.solana.com/tx/wVPTC7saKwFHVniCPjJAEiTVaY35yYkkNEj5C8oB3uZWSSQ8o96FdQpCmQkViRFKRNd4tgRfdZJoSPs2q9HHVqq?cluster=devnet  
-- Earlier demo tx: https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet
+- Shielded mode swap: https://explorer.solana.com/tx/4r1hKt9mwC5pAXx9c1gqZU8LASjaeQyCNftZHAwjHBT83j9NpViyWXK5Vjw3Q8JewpcWuKSCsyF29Nc3sqJ4H8k6?cluster=devnet  
+- All proofs mode swap: https://explorer.solana.com/tx/wVPTC7saKwFHVniCPjJAEiTVaY35yYkkNEj5C8oB3uZWSSQ8o96FdQpCmQkViRFKRNd4tgRfdZJoSPs2q9HHVqq?cluster=devnet
 
 ---
 

@@ -19,7 +19,7 @@ export const SolutionSection = () => {
                                 <span className="text-violet-400/90">Selective Privacy.</span>
                             </h2>
                             <p className="text-white/60 text-lg md:text-xl font-light leading-relaxed">
-                                Verify eligibility without exposing sensitive data. Amounts and recipients are still public on-chain; the proofs keep eligibility and note ownership private.
+                                Verify eligibility without exposing sensitive data. Amounts and recipients are visible on chain; the proofs keep eligibility and note ownership private.
                             </p>
 
                             <div className="p-6 rounded-2xl bg-black/30">

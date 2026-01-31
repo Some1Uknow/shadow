@@ -11,7 +11,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: 'Shadow DEX',
-  description: 'The first privacy-preserving DEX on Solana where you prove eligibility without revealing yourself',
+  description: 'A privacy focused DEX demo on Solana with shielded swaps and eligibility proofs',
 };
 
 export default function RootLayout({

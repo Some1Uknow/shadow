@@ -34,13 +34,13 @@ export const HeroSection = () => {
                                     <span className="text-sm text-white/70">Live on Devnet</span>
                                 </div>
                                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-normal tracking-tight text-white/95 leading-tight animate-page-enter-delay-1">
-                                    Prove You&apos;re Eligible.<br />
+                                    Private eligibility.<br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-400">
-                                        Keep Eligibility Data Private.
+                                        Real swaps on Solana.
                                     </span>
                                 </h1>
                                 <p className="text-lg md:text-xl text-white/60 font-light leading-relaxed max-w-xl animate-page-enter-delay-2">
-                                    A DEX on Solana where you verify eligibility with zero‑knowledge proofs without exposing your holdings. Swaps remain public; eligibility stays private.
+                                    Swap through a shielded pool and prove eligibility without exposing balances or addresses. Shielded spend proofs are verified on chain, and eligibility proofs are verified by the relayer today.
                                 </p>
 
                                 <div className="pt-4 animate-page-enter-delay-3">
@@ -70,15 +70,15 @@ export const HeroSection = () => {
                                 <div className="space-y-4 mb-8">
                                     <div className="flex items-center gap-3 text-white/70">
                                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-bold">1</div>
-                                        <span className="text-sm">Generate ZK proof of your balance</span>
+                                        <span className="text-sm">Deposit into the shielded pool</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-white/70">
                                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-bold">2</div>
-                                        <span className="text-sm">Proof verified on-chain (Groth16)</span>
+                                        <span className="text-sm">Generate a shielded spend proof</span>
                                     </div>
                                     <div className="flex items-center gap-3 text-white/70">
                                         <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-sm font-bold">3</div>
-                                        <span className="text-sm">Swap executes — eligibility stays private</span>
+                                        <span className="text-sm">Relayer submits the swap, proof verified on chain</span>
                                     </div>
                                 </div>
 

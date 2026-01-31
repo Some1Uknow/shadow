@@ -20,7 +20,7 @@ export const ProblemSection = () => {
                             <div className="animate-card-enter-delay-1">
                                 <ProblemCard
                                     title="Eligibility Doxxing"
-                                    description="Proving thresholds publicly links your wallet to private data"
+                                    description="Proving thresholds on chain links your wallet to sensitive data"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-2">

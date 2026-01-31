@@ -1,7 +1,7 @@
 # Shadow DEX
 
 **Private eligibility checks for swaps on Solana.**  
-Hackathon project — real proofs, real devnet swaps.
+Hackathon project with real proofs and real devnet swaps.
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
 [![Built with Noir](https://img.shields.io/badge/Built%20with-Noir-orange)](https://noir-lang.org)
@@ -17,12 +17,12 @@ DeFi pools often need to verify users before letting them trade:
 - "Do you hold our governance token?"
 - "Are you on a sanctions list?"
 
-Today, answering these questions usually means **exposing your data**. Want to join a whale pool? Show your balance. Want to prove you're not sanctioned? Reveal your wallet address.
+Today, answering these questions usually means exposing your data. Want to join a whale pool? Show your balance. Want to prove you are not sanctioned? Reveal your wallet address.
 
 ## What Shadow Does
 
-Shadow lets you **prove eligibility without revealing the underlying data**.  
-Swaps still execute publicly on Solana — **amounts and recipients are on-chain** — but **your eligibility data and shielded note ownership stay private**.
+Shadow lets you prove eligibility without revealing the underlying data.  
+Swaps still execute on Solana, so amounts and recipients are on chain, but your eligibility data and shielded note ownership stay private.
 
 ```
 Traditional: "I have $147,832" → Pool says OK (but now everyone knows your balance)
@@ -32,14 +32,26 @@ Shadow:      "I have ≥ $100,000" → Pool says OK (actual balance stays privat
 
 We support four proof types:
 
-| Proof | What You Prove | What Stays Private | Status |
-|-------|----------------|-------------------|--------|
-| **Min Balance** | "I have ≥ X tokens" | Your actual balance | ✅ Fully Integrated |
-| **Token Holder** | "I hold ≥ Y of token Z" | Your holdings & wallet | ✅ Fully Integrated |
-| **Not Blacklisted** | "I'm not on this list" | Your wallet address | ✅ Fully Integrated |
-| **Shielded Spend** | "I own a note in the shielded pool" | Which deposit note you spent (amount/recipient remain public) | ✅ Fully Integrated |
+| Proof | What You Prove | What Stays Private | Where It Is Checked |
+|-------|----------------|-------------------|---------------------|
+| **Min Balance** | "I have ≥ X tokens" | Your exact balance | Relayer |
+| **Token Holder** | "I hold ≥ Y of token Z" | Your holdings and wallet | Relayer |
+| **Not Blacklisted** | "I'm not on this list" | Your wallet address | Relayer (simplified demo) |
+| **Shielded Spend** | "I own a note in the shielded pool" | Which deposit note you spent | On chain |
 
 > **Try it:** Use the **Proof Mode Selector** in the swap interface to test each proof type.
+
+### What is private today
+
+- **Private**: your eligibility data, and which shielded note you spend.
+- **Visible on chain**: token mints, amounts, pool, and swap outputs.
+
+This is honest privacy for a hackathon demo. It hides who can trade and why, but not the amounts.
+
+### Why we chose this
+
+Everyone is chasing full on-chain privacy. We took a different path that is practical today.  
+We focused on eligibility privacy plus real swaps, so teams can gate access without exposing user data.
 
 ---
 
@@ -52,7 +64,7 @@ We support four proof types:
 | **Frontend** | Next.js, React, Tailwind | Wallet connection, swap UI, proof status |
 | **Proof API** | Next.js API Routes | Generates proofs for the selected mode |
 | **Circuits** | Noir | Define the proof rules |
-| **Verifier** | Solana program | Verifies proofs on-chain |
+| **Verifier** | Solana program | Verifies shielded spend proofs on-chain |
 | **Swap Program** | Anchor/Rust | Executes the swap once proofs pass |
 
 ---
@@ -63,9 +75,31 @@ We support four proof types:
 2. The app creates a shielded deposit note
 3. A proof is generated in the background
 4. A relayer submits the swap using your proof
-5. The program verifies the proof and executes the swap
+5. The program verifies the shielded proof and executes the swap
 
 No manual proof steps. Just swap.
+
+### What changes between shielded mode and all proofs mode
+
+- **On chain**: both modes call the same `SwapPrivate` instruction and verify the same shielded spend proof. You can see this in the transaction logs.
+- **Off chain**: in all proofs mode, the relayer verifies three extra proofs before it submits the swap.
+  - Min balance
+  - Token holder
+  - Not blacklisted (demo version)
+- Those extra checks do not appear on chain because they are relayer side today.
+
+### A note on proof generation
+
+Proofs are generated on the server today because Sunspot is easiest to run there.  
+This is a demo tradeoff, not a design requirement, and can move client side when tooling improves.
+
+### Demo notes
+
+- Shielded spend proofs are verified on chain, and eligibility proofs are verified by the relayer.
+- Min balance and token holder proofs are bound to real SPL token account data, but do not yet verify against a global Solana state root.
+- Blacklist exclusion is still simplified in this demo.
+- Root updates require a configured root authority key. The app uses it to keep the on-chain root history in sync with the local tree.
+We are aware of these gaps and are actively working through the next steps below.
 
 ---
 
@@ -139,11 +173,14 @@ See [GUIDE.md](GUIDE.md) for full setup and deployment instructions.
 | Contract | Address |
 |----------|---------|
 | Shadow DEX | [`3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72`](https://explorer.solana.com/address/3TKv2Y8SaxJd2wmmtBS58GjET4mLz5esMZjnGfrstG72?cluster=devnet) |
-| Shielded Verifier | [`6uKeW1P2VQL9TqTkohKAJ1uJMNYxw7yhPFxy9Yjo42uu`](https://explorer.solana.com/address/6uKeW1P2VQL9TqTkohKAJ1uJMNYxw7yhPFxy9Yjo42uu?cluster=devnet) |
+| Shielded Verifier | [`HPsMCiGGMEScQdKxihvSazYyXPsyXi7fj5q2vtBfQ4tF`](https://explorer.solana.com/address/HPsMCiGGMEScQdKxihvSazYyXPsyXi7fj5q2vtBfQ4tF?cluster=devnet) |
 | Token A | `7YfeuJcTLunbJLd58BLHdYww7g4P6aCtFdZM38f1NqgY` |
 | Token B | `7VxpQBGHGxbPXmmbW22mZfxdD9ULuhghuK8A68ZB7Hid` |
 
-**Example Transaction:** [View on Explorer](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
+**Example Transactions:**  
+- Shielded mode swap: https://explorer.solana.com/tx/b3UgihK5FTgBA6Y45LMxghJjgrjFRNF8HL7W5wCNAYokq4iuaeeGX5X3q672FBkB6Vb8j1PfEGHmjFyoNi9sAtD?cluster=devnet  
+- All proofs mode swap: https://explorer.solana.com/tx/wVPTC7saKwFHVniCPjJAEiTVaY35yYkkNEj5C8oB3uZWSSQ8o96FdQpCmQkViRFKRNd4tgRfdZJoSPs2q9HHVqq?cluster=devnet  
+- Earlier demo tx: https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet
 
 ---
 
@@ -167,16 +204,16 @@ The swap interface includes a **Proof Mode Selector** that lets you test each pr
 4. Select different modes and observe:
    - Requirements panel shows different checks
    - Proof generation creates different proof types
-   - All proofs verify on-chain before swap executes
+   - Proofs are generated for the selected mode and checked before swap executes
 
 ---
 
 ## What's Next
 
-- **Durable pool service:** move the local tree to a persistent service that keeps pool roots in sync and exposes simple APIs.
-- **Shielded outputs:** create new notes for recipients so amounts and recipients aren’t public, not just eligibility.
-- **Stronger privacy by default:** batch deposits, add delays, and route through multiple relayers to reduce timing clues.
-- **Production hardening:** safer key handling, rate limits, monitoring, audits, and reproducible builds.
+- **Durable pool service**: move the local tree to a persistent service that keeps pool roots in sync and exposes simple APIs.
+- **Shielded outputs**: create new notes for recipients so amounts and recipients are not visible on chain.
+- **Stronger privacy by default**: batch deposits, add delays, and route through multiple relayers to reduce timing clues.
+- **Production hardening**: safer key handling, rate limits, monitoring, audits, and reproducible builds.
 
 ---
 

@@ -1,7 +1,6 @@
-# Shadow DEX Technical Explanation (Plain English)
+# Shadow DEX Technical Explanation
 
-This is a short, honest explanation of how Shadow works under the hood.  
-It is written for engineers, but without heavy jargon.
+This is a short explanation of how Shadow works under the hood.  
 
 ## One sentence summary
 
@@ -83,7 +82,7 @@ Shadow ships four proof modes:
 - **Shielded Spend**  
   Proves the user owns a note in the shielded pool and prevents double spend with a nullifier.
 
-## What is real and enforced on-chain
+## How the proofs are verified
 
 - The shielded spend proof is verified on chain by the verifier program.
 - The program checks the nullifier to prevent double spends.

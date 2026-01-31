@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker deployment
+  turbopack: {}, // silence turbopack warning when using webpack config
 
   // Webpack configuration (used for production builds)
   webpack: (config, { isServer }) => {

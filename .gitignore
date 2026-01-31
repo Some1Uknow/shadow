@@ -46,3 +46,4 @@ app/.data/
 deployer.json
 .agent/
 relayer-keypair.json
+.gemini/

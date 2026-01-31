@@ -40,7 +40,7 @@ export const HeroSection = () => {
                                     </span>
                                 </h1>
                                 <p className="text-lg md:text-xl text-white/60 font-light leading-relaxed max-w-xl animate-page-enter-delay-2">
-                                    Swap through a shielded pool and prove eligibility without exposing balances or addresses. The shielded spend proof is verified on chain, and eligibility proofs are checked by the relayer in all proofs mode.
+                                    Swap through a shielded pool and prove eligibility without exposing balances or addresses. 
                                 </p>
 
                                 <div className="pt-4 animate-page-enter-delay-3">

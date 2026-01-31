@@ -55,20 +55,6 @@ We focused on eligibility privacy plus real swaps, so teams can gate access with
 
 ---
 
-## Architecture (Simple View)
-
-![Architecture](https://shadow-dex.fly.dev/architecture.png)
-
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Frontend** | Next.js, React, Tailwind | Wallet connection, swap UI, proof status |
-| **Proof API** | Next.js API Routes | Generates proofs for the selected mode |
-| **Circuits** | Noir | Define the proof rules |
-| **Verifier** | Solana program | Verifies shielded spend proofs on-chain |
-| **Swap Program** | Anchor/Rust | Executes the swap once proofs pass |
-
----
-
 ## How It Works
 
 1. Pick a proof mode and swap amount
@@ -83,48 +69,11 @@ No manual proof steps. Just swap.
 
 Shielded mode swap flow:
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant P as Proof API
-  participant R as Relayer
-  participant Z as ZKGate program
-  participant V as Verifier program
-  U->>A: Choose shielded mode and amount
-  A->>Z: Deposit into shielded pool
-  A->>P: Generate shielded spend proof
-  P-->>A: Proof + public inputs
-  A->>R: Submit swap request
-  R->>Z: Send SwapPrivate tx
-  Z->>V: Verify shielded proof
-  Z-->>Z: Check nullifier + root + pool
-  Z-->>U: Swap settles on chain
-```
+![Shielded Swap Flow](app/public/shieldedpool.png)
 
 All proofs mode swap flow:
 
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant E as Eligibility Proof APIs
-  participant P as Shielded Proof API
-  participant R as Relayer
-  participant Z as ZKGate program
-  participant V as Verifier program
-  U->>A: Choose all proofs mode and amount
-  A->>E: Generate eligibility proofs
-  E-->>A: Min balance, token holder, blacklist proofs
-  A->>P: Generate shielded spend proof
-  P-->>A: Shielded proof + public inputs
-  A->>R: Submit swap request with all proofs
-  R-->>R: Verify eligibility proofs off chain
-  R->>Z: Send SwapPrivate tx
-  Z->>V: Verify shielded proof
-  Z-->>Z: Check nullifier + root + pool
-  Z-->>U: Swap settles on chain
-```
+![All Proofs Swap Flow](app/public/allproofswap.png)
 
 ### What changes between shielded mode and all proofs mode
 

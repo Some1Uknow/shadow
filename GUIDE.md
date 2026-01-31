@@ -71,55 +71,6 @@ Open http://localhost:3000
 
 ---
 
-## Swap Flow Diagrams
-
-Shielded mode swap flow:
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant P as Proof API
-  participant R as Relayer
-  participant Z as ZKGate program
-  participant V as Verifier program
-  U->>A: Choose shielded mode and amount
-  A->>Z: Deposit into shielded pool
-  A->>P: Generate shielded spend proof
-  P-->>A: Proof + public inputs
-  A->>R: Submit swap request
-  R->>Z: Send SwapPrivate tx
-  Z->>V: Verify shielded proof
-  Z-->>Z: Check nullifier + root + pool
-  Z-->>U: Swap settles on chain
-```
-
-All proofs mode swap flow:
-
-```mermaid
-sequenceDiagram
-  participant U as User
-  participant A as App
-  participant E as Eligibility Proof APIs
-  participant P as Shielded Proof API
-  participant R as Relayer
-  participant Z as ZKGate program
-  participant V as Verifier program
-  U->>A: Choose all proofs mode and amount
-  A->>E: Generate eligibility proofs
-  E-->>A: Min balance, token holder, blacklist proofs
-  A->>P: Generate shielded spend proof
-  P-->>A: Shielded proof + public inputs
-  A->>R: Submit swap request with all proofs
-  R-->>R: Verify eligibility proofs off chain
-  R->>Z: Send SwapPrivate tx
-  Z->>V: Verify shielded proof
-  Z-->>Z: Check nullifier + root + pool
-  Z-->>U: Swap settles on chain
-```
-
----
-
 ## Full Deployment
 
 ### 1. Setup Wallet
@@ -269,22 +220,6 @@ npx ts-node scripts/airdrop-tokens.ts YOUR_WALLET_ADDRESS
 The ZK proof ensures you're eligible to trade without exposing your actual holdings.
 
 Amounts and recipients remain public on Solana; eligibility data and shielded note ownership stay private.
-
----
-
-## Flowchart (Judge View)
-
-```mermaid
-flowchart LR
-  A[User Wallet] --> B[Create Shielded Note]
-  B --> C[Deposit to Shielded Pool]
-  C --> D[Local Merkle Tree Update]
-  D --> E[Root Update (Authority)]
-  E --> F[Generate ZK Proofs (Noir + Sunspot)]
-  F --> G[Relayer Builds Tx]
-  G --> H[On-chain Verifier CPI]
-  H --> I[AMM Swap + Transfers]
-```
 
 ---
 

@@ -1,5 +1,5 @@
-// Shielded spend circuit
-// Proves knowledge of a note in the Merkle tree and binds a nullifier + recipient + amount.
+// shielded spend circuit
+// proves note membership and binds nullifier, recipient, and amount
 
 use poseidon::poseidon::bn254 as poseidon;
 
@@ -22,14 +22,14 @@ fn merkle_root(leaf: Field, path: [Field; 32], indices: [u1; 32]) -> Field {
 }
 
 fn main(
-    // Private inputs
+    // private inputs
     amount: Field,
     secret: Field,
     nullifier: Field,
     merkle_path: [Field; 32],
     merkle_indices: [u1; 32],
 
-    // Public inputs
+    // public inputs
     root: pub Field,
     nullifier_hash: pub Field,
     amount_pub: pub Field,
@@ -37,23 +37,23 @@ fn main(
     mint: pub Field,
     pool_id: pub Field,
 ) {
-    // Note commitment: bind to mint + pool
+    // note commitment binds mint and pool
     let commitment = poseidon::hash_5([amount, secret, nullifier, mint, pool_id]);
     let computed_root = merkle_root(commitment, merkle_path, merkle_indices);
     assert(computed_root == root);
 
-    // Nullifier hash prevents double spend
+    // nullifier hash prevents double spend
     let computed_nullifier = poseidon::hash_3([nullifier, mint, pool_id]);
     assert(computed_nullifier == nullifier_hash);
 
-    // Bind amount and recipient (recipient is public, so the proof commits to it)
+    // bind amount and recipient
     assert(amount_pub == amount);
     let _ = recipient;
 }
 
 #[test]
 fn test_placeholder() {
-    // Minimal smoke test - real tests should use actual Merkle paths.
+    // minimal smoke test, real tests should use real merkle paths
     let amount = 10;
     let secret = 5;
     let nullifier = 7;

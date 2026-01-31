@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[account]
 pub struct StateRootHistory {
-    pub roots: [u8; 3200], // Stores last 100 roots (32 bytes * 100)
+    pub roots: [u8; 3200], // stores last 100 roots (32 bytes each)
     pub current_index: u64,
     pub authority: Pubkey,
 }

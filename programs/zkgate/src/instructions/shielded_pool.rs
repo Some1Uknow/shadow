@@ -11,7 +11,7 @@ use crate::state::shielded::{DepositEvent, Nullifier, ROOT_HISTORY_BYTES};
 const PUBLIC_INPUTS_LEN: usize = 6; // root, nullifier, amount, recipient, mint, pool
 
 fn parse_field(public_inputs: &[u8], index: usize) -> Result<[u8; 32]> {
-    // Noir public witness files include a 12-byte header. Strip it if present.
+    // noir public witness files include a 12-byte header, strip it if present
     let header = if public_inputs.len() == PUBLIC_INPUTS_LEN * 32 + 12 { 12 } else { 0 };
     let start = header + index * 32;
     let end = start + 32;
@@ -24,7 +24,7 @@ fn parse_field(public_inputs: &[u8], index: usize) -> Result<[u8; 32]> {
 }
 
 fn field_to_u64(field_bytes: &[u8; 32]) -> Result<u64> {
-    // Public witness entries are big-endian; u64 should be in the last 8 bytes.
+    // public witness entries are big-endian, u64 is in the last 8 bytes
     if field_bytes[..24].iter().any(|b| *b != 0) {
         return Err(ErrorCode::InvalidProof.into());
     }
@@ -36,7 +36,7 @@ fn field_to_u64(field_bytes: &[u8; 32]) -> Result<u64> {
 fn pubkey_to_field_bytes(key: &Pubkey) -> [u8; 32] {
     let bytes = key.to_bytes();
     let mut out = [0u8; 32];
-    // Address fields are encoded as big-endian 128-bit values in the last 16 bytes.
+    // address fields are big-endian 128-bit values in the last 16 bytes
     out[16..].copy_from_slice(&bytes[..16]);
     out
 }
@@ -263,7 +263,7 @@ pub fn withdraw_shielded<'info>(
 }
 
 // -----------------------------------------------------------------------------
-// Shielded Swap (uses shielded deposits as private input)
+// shielded swap, uses shielded deposits as private input
 // -----------------------------------------------------------------------------
 
 pub fn swap_private<'info>(
@@ -284,7 +284,7 @@ pub fn swap_private<'info>(
     let reserve_out_info = ctx.remaining_accounts[2].clone();
     let recipient_info = ctx.remaining_accounts[3].clone();
 
-    // 1) Verify ZK proof for ownership of a note in the input shielded pool
+    // 1) verify zk proof for note ownership
     verify_zk_proof(&ctx.accounts.verifier_program, &proof, &public_inputs)?;
 
     let root_bytes = parse_field(&public_inputs, 0)?;
@@ -343,7 +343,7 @@ pub fn swap_private<'info>(
         &nullifier_hash,
     )?;
 
-    // 2) Move amount_in from shielded vault to AMM reserve
+    // 2) move amount_in from shielded vault to amm reserve
     let input_vault_seeds = &[
         b"shielded_pool".as_ref(),
         input_pool.mint.as_ref(),
@@ -364,7 +364,7 @@ pub fn swap_private<'info>(
         amount_in,
     )?;
 
-    // 3) Execute AMM swap and send output to recipient
+    // 3) execute amm swap and send output to recipient
     let (reserve_in_amount, reserve_out_amount) = if is_a_to_b {
         (pool.token_a_reserve, pool.token_b_reserve)
     } else {
@@ -395,7 +395,7 @@ pub fn swap_private<'info>(
         amount_out,
     )?;
 
-    // Update AMM reserves
+    // update amm reserves
     if is_a_to_b {
         pool.token_a_reserve = pool.token_a_reserve.checked_add(amount_in).ok_or(ErrorCode::MathOverflow)?;
         pool.token_b_reserve = pool.token_b_reserve.checked_sub(amount_out).ok_or(ErrorCode::MathOverflow)?;

@@ -55,8 +55,8 @@ pub fn verify_zk_proof<'info>(
 
     // gnark-solana verifier expects instruction data = proof || public_witness
     let mut instruction_data = Vec::with_capacity(proof.len() + public_inputs.len());
-    instruction_data.extend_from_slice(proof);         // Proof FIRST
-    instruction_data.extend_from_slice(public_inputs); // Public inputs (w/ header) SECOND
+    instruction_data.extend_from_slice(proof);         // proof first
+    instruction_data.extend_from_slice(public_inputs); // public inputs second
 
     let ix = Instruction {
         program_id: *verifier_program.key,

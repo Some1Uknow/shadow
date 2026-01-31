@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
-/// Shielded pool state for a single SPL token mint.
-/// Root updates are managed by an off-chain sequencer/relayer authority.
+/// shielded pool state for a single spl token mint
+/// root updates are managed by an off-chain sequencer or relayer authority
 #[account]
 pub struct ShieldedPool {
     pub mint: Pubkey,
@@ -17,7 +17,7 @@ impl ShieldedPool {
     pub const LEN: usize = 8 + 32 + 32 + 32 + 32 + 32 + 8 + 1;
 }
 
-/// Marks a nullifier as spent.
+/// marks a nullifier as spent
 #[account]
 pub struct Nullifier {
     pub spent: bool,

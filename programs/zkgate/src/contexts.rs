@@ -51,9 +51,9 @@ pub struct ZKSwap<'info> {
     pub token_b_reserve: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
-    /// CHECK: Validated in verify_zk_proof
+    /// CHECK: validated in verify_zk_proof
     pub verifier_program: UncheckedAccount<'info>,
-    /// CHECK: Required by deployed program
+    /// CHECK: required by deployed program
     pub verifier_state: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     #[account(mut)]
@@ -74,9 +74,9 @@ pub struct ZKSwapReverse<'info> {
     pub token_b_reserve: Account<'info, TokenAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
-    /// CHECK: Validated in verify_zk_proof
+    /// CHECK: validated in verify_zk_proof
     pub verifier_program: UncheckedAccount<'info>,
-    /// CHECK: Required by deployed program
+    /// CHECK: required by deployed program
     pub verifier_state: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
     #[account(mut)]
@@ -89,7 +89,7 @@ pub struct GetPoolInfo<'info> {
 }
 
 // -----------------------------------------------------------------------------
-// Shielded Swap Context
+// shielded swap context
 // -----------------------------------------------------------------------------
 
 #[derive(Accounts)]
@@ -100,14 +100,14 @@ pub struct SwapPrivate<'info> {
     pub input_shielded_pool: Account<'info, ShieldedPool>,
     #[account(mut)]
     pub input_root_history: AccountLoader<'info, ShieldedRootHistory>,
-    // Remaining accounts:
+    // remaining accounts:
     // 0: shielded_vault_in (writable)
     // 1: reserve_in (writable)
     // 2: reserve_out (writable)
     // 3: recipient_token (writable)
-    /// CHECK: Validated by CPI verifier + public inputs
+    /// CHECK: validated by cpi verifier and public inputs
     pub verifier_program: UncheckedAccount<'info>,
-    /// CHECK: PDA derived from input shielded pool + nullifier hash (validated in handler)
+    /// CHECK: pda derived from input shielded pool and nullifier hash
     #[account(mut)]
     pub nullifier_account: UncheckedAccount<'info>,
     #[account(mut)]
@@ -117,7 +117,7 @@ pub struct SwapPrivate<'info> {
 }
 
 // -----------------------------------------------------------------------------
-// Shielded Pool Contexts
+// shielded pool contexts
 // -----------------------------------------------------------------------------
 
 #[derive(Accounts)]
@@ -190,12 +190,12 @@ pub struct WithdrawShielded<'info> {
     pub shielded_pool: Account<'info, ShieldedPool>,
     #[account(mut)]
     pub root_history: AccountLoader<'info, ShieldedRootHistory>,
-    // Remaining accounts:
+    // remaining accounts:
     // 0: vault (writable)
     // 1: recipient_token (writable)
-    /// CHECK: Validated by CPI verifier + public inputs
+    /// CHECK: validated by cpi verifier and public inputs
     pub verifier_program: UncheckedAccount<'info>,
-    /// CHECK: PDA derived from shielded pool + nullifier hash (validated in handler)
+    /// CHECK: pda derived from shielded pool and nullifier hash
     #[account(mut)]
     pub nullifier_account: UncheckedAccount<'info>,
     #[account(mut)]

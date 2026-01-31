@@ -16,9 +16,9 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-// Helper to get deployer keypair
+// helper to get deployer keypair
 function getDeployerKeypair(): Keypair | null {
-    // 1. Try environment variable (Production/Docker)
+    // 1. try env var
     const envKey = process.env.FAUCET_PRIVATE_KEY;
     if (envKey) {
         try {
@@ -29,9 +29,9 @@ function getDeployerKeypair(): Keypair | null {
         }
     }
 
-    // 2. Try local file (Development)
+    // 2. try local file
     try {
-        // Navigate up from app/src/app/api/faucet/route.ts -> app -> root
+        // go up from app to repo root
         const deployerPath = path.join(process.cwd(), '..', 'deployer.json');
         if (fs.existsSync(deployerPath)) {
             const secretKey = Uint8Array.from(JSON.parse(fs.readFileSync(deployerPath, 'utf-8')));
@@ -67,23 +67,23 @@ export async function POST(request: Request) {
 
         const tx = new Transaction();
 
-        // Helper to mint tokens to recipient (and create ATA if needed)
+        // helper to mint tokens to recipient and create ata if needed
         async function addMint(mint: PublicKey, amount: number) {
             if (amount <= 0) return;
 
-            const decimals = 9; // Assuming 9 decimals for now
+            const decimals = 9; // assuming 9 decimals for now
             const rawAmount = BigInt(Math.floor(amount * Math.pow(10, decimals)));
 
             const recipientATA = await getAssociatedTokenAddress(mint, recipientPubkey);
 
-            // Check if recipient ATA exists
+            // check if recipient ata exists
             try {
                 await getAccount(connection, recipientATA);
             } catch (e) {
-                // ATA doesn't exist, create it
+                // ata does not exist, create it
                 tx.add(
                     createAssociatedTokenAccountInstruction(
-                        deployer!.publicKey, // Payer
+                        deployer!.publicKey, // payer
                         recipientATA,
                         recipientPubkey,
                         mint
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
                 );
             }
 
-            // Mint directly to recipient
+            // mint directly to recipient
             tx.add(
                 createMintToInstruction(
                     mint,

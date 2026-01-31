@@ -1,13 +1,17 @@
-/**
- * Min Balance Proof API
- * Generates a ZK proof that balance >= threshold without revealing actual balance.
+/*
+ * min balance proof api
+ * proves balance >= threshold without revealing the exact balance
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import {
     checkRequiredTools,
     writeProverToml,
+    addressToField,
 } from '@/lib/proof-utils';
+import { hashAccountData, readU64Le } from '@/lib/account-hash';
 import {
     ProofErrorCodes,
     createErrorResponse,
@@ -27,37 +31,54 @@ import {
 
 const CIRCUIT_NAME = 'min_balance';
 
-// Generate Proof
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { balance, threshold } = body;
+        const { owner, token_mint, threshold } = body;
 
-        // Validate required parameters
-        if (balance === undefined || balance === null || threshold === undefined || threshold === null) {
+        if (!owner || !token_mint || threshold === undefined || threshold === null) {
             return createErrorResponse(
                 ProofErrorCodes.MISSING_PARAMS,
-                'Missing required parameters: balance and threshold',
+                'Missing required parameters: owner, token_mint, threshold',
                 400,
-                'Both balance and threshold must be provided as strings representing token amounts in smallest units (e.g., lamports)'
+                'owner, token_mint, and threshold are required'
             );
         }
 
-        // Validate balance is a valid number
-        const balanceNum = BigInt(balance);
         const thresholdNum = BigInt(threshold);
 
-        if (balanceNum < BigInt(0)) {
+        if (thresholdNum < BigInt(0)) {
             return createErrorResponse(
                 ProofErrorCodes.INVALID_BALANCE,
                 'Invalid balance: must be non-negative',
                 400,
-                `Received balance: ${balance}`
+                `Received threshold: ${threshold}`
             );
         }
 
-        // Pre-check: balance must be >= threshold
+        const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+        const connection = new Connection(rpcEndpoint, 'confirmed');
+        const ownerKey = new PublicKey(owner);
+        const mintKey = new PublicKey(token_mint);
+        const ata = await getAssociatedTokenAddress(mintKey, ownerKey);
+        const accountInfo = await connection.getAccountInfo(ata);
+        if (!accountInfo?.data) {
+            return createErrorResponse(
+                ProofErrorCodes.INVALID_BALANCE,
+                'Token account not found',
+                404
+            );
+        }
+        const accountData = new Uint8Array(accountInfo.data);
+        if (accountData.length < 165) {
+            return createErrorResponse(
+                ProofErrorCodes.INVALID_BALANCE,
+                'Invalid token account data',
+                400
+            );
+        }
+        const balanceNum = BigInt(readU64Le(accountData, 64));
+
         if (balanceNum < thresholdNum) {
             return createErrorResponse(
                 ProofErrorCodes.BALANCE_BELOW_THRESHOLD,
@@ -67,54 +88,38 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log('[Prove API] Generating proof for:', { balance, threshold });
+        const balance = balanceNum.toString();
+        const ownerField = addressToField(owner);
+        const tokenMintField = addressToField(token_mint);
+        const computedRoot = hashAccountData(accountData);
 
-        // Check required tools
+        console.log('[Prove API] Generating proof for:', { owner, token_mint, threshold });
+
         const tools = await checkRequiredTools();
         if (!tools.allAvailable) {
             return toolsNotAvailableError(tools);
         }
 
-        // Check if circuit is compiled
         const config = createCircuitConfig(CIRCUIT_NAME);
         if (!await isCircuitCompiled(config)) {
             return circuitNotCompiledError(CIRCUIT_NAME);
         }
 
-        // Generate dummy Merkle inputs for Demo
-        // Corresponds to 'Trivial Hash' in circuit: Leaf = Balance; Node = Left + Right + 1
-
-        // 1. Account Data (165 bytes)
-        const dummyAccountData = Array(165).fill(0).map(() => 0);
-
-        // 2. Merkle Path (32 fields) & Indices
-        const dummyMerklePath = Array(32).fill(0).map(() => 0);
-        const dummyMerkleIndices = "0";
-
-        // 3. Compute Expected Root
-        // Leaf = Balance
-        // For each of 32 levels: Root = Current + Sibling(0) + 1 = Current + 1
-        // So Root = Balance + 32
-        const computedRoot = balanceNum + BigInt(32);
-
-        // Write Prover.toml with all required inputs
-        // Note: Arrays in TOML for Nargo can be explicit via [values] but simply formatting as below works best
         const proverContent = `
 # Private inputs
 balance = "${balance}"
-account_data = ${JSON.stringify(dummyAccountData)}
-merkle_path = ${JSON.stringify(dummyMerklePath.map(x => x.toString()))}
-merkle_indices = "${dummyMerkleIndices}"
+owner = "${ownerField}"
+account_data = ${JSON.stringify(Array.from(accountData))}
 
 # Public inputs
-state_root = "${computedRoot.toString()}"
+state_root = "${computedRoot}"
 threshold = "${threshold}"
+token_mint = "${tokenMintField}"
 `.trim();
 
         await writeProverToml(config.circuitDir, proverContent);
         console.log('[Prove API] Written Prover.toml with inputs');
 
-        // Generate witness
         console.log('[Prove API] Running nargo execute...');
         try {
             await generateWitness(config);
@@ -134,22 +139,19 @@ threshold = "${threshold}"
             return witnessGenerationError(errorMsg);
         }
 
-        // Verify witness was generated
         if (!await isWitnessGenerated(config)) {
             return witnessGenerationError('nargo execute completed but witness file was not created');
         }
         console.log('[Prove API] Witness generated');
 
-        // Generate proof
         console.log('[Prove API] Running sunspot prove...');
         try {
             const result = await generateFullProof(config, {
                 threshold,
-                proofSize: 0, // Will be updated below
+                proofSize: 0, // will be updated below
                 publicInputsSize: 0,
             });
 
-            // Update metadata with actual sizes
             result.metadata = {
                 threshold,
                 proofSize: result.proof.length,
@@ -174,8 +176,6 @@ threshold = "${threshold}"
     }
 }
 
-// GET - Health Check
-
 export async function GET() {
     const config = createCircuitConfig(CIRCUIT_NAME);
     const [isCompiled, tools] = await Promise.all([
@@ -193,8 +193,8 @@ export async function GET() {
         tools,
         description: 'Proves balance >= threshold without revealing actual balance',
         inputs: {
-            private: ['balance'],
-            public: ['threshold'],
+            private: ['balance', 'owner', 'account_data'],
+            public: ['state_root', 'threshold', 'token_mint'],
         },
         ...((!isReady) && {
             setupInstructions: {

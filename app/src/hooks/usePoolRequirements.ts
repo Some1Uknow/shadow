@@ -38,6 +38,11 @@ interface ProofResult {
   publicInputs: Uint8Array;
 }
 
+export interface GeneratedProofs {
+  primary: ProofResult | null;
+  proofs: Map<RequirementType, ProofResult>;
+}
+
 // Hook
 
 /**
@@ -108,7 +113,8 @@ export function usePoolRequirements(initialMode?: ProofMode) {
   const checkRequirement = useCallback(
     async (
       requirement: PoolRequirement,
-      swapAmount: number
+      swapAmount: number,
+      swapMint?: PublicKey
     ): Promise<{ met: boolean; userValue?: number | string; error?: string }> => {
       if (!publicKey || !connection) {
         return { met: false, error: 'Wallet not connected' };
@@ -121,7 +127,8 @@ export function usePoolRequirements(initialMode?: ProofMode) {
             // Get user's balance of the swap token
             if (!poolConfig) return { met: false, error: 'Pool not configured' };
 
-            const ata = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
+            const mint = swapMint ?? poolConfig.tokenAMint;
+            const ata = await getAssociatedTokenAddress(mint, publicKey);
             try {
               const account = await getAccount(connection, ata);
               const balance = Number(account.amount) / 1e9;
@@ -189,14 +196,14 @@ export function usePoolRequirements(initialMode?: ProofMode) {
    * Check all requirements for a given swap amount
    */
   const checkAllRequirements = useCallback(
-    async (swapAmount: number) => {
+    async (swapAmount: number, swapMint?: PublicKey) => {
       if (!publicKey || requirements.length === 0) return;
 
       setIsCheckingAll(true);
 
       const newStatuses = await Promise.all(
         requirements.map(async (req) => {
-          const result = await checkRequirement(req, swapAmount);
+          const result = await checkRequirement(req, swapAmount, swapMint);
           return {
             requirement: req,
             met: result.met,
@@ -219,7 +226,7 @@ export function usePoolRequirements(initialMode?: ProofMode) {
    * Returns the proof directly to avoid React state timing issues
    */
   const generateAllProofs = useCallback(
-    async (swapAmount: number): Promise<ProofResult | null> => {
+    async (swapAmount: number, swapMint?: PublicKey): Promise<GeneratedProofs | null> => {
       if (!publicKey || !poolConfig) return null;
 
       const newProofs = new Map<RequirementType, ProofResult>();
@@ -250,7 +257,8 @@ export function usePoolRequirements(initialMode?: ProofMode) {
               const minReq = req as MinBalanceRequirement;
               const threshold = Math.max(minReq.threshold, swapAmount);
               const inputs: MinBalanceInputs = {
-                balance: status.userValue as number,
+                owner: publicKey.toBase58(),
+                token_mint: (swapMint ?? poolConfig?.tokenAMint)?.toBase58() || '',
                 threshold,
               };
               const proofResult = await generateMinBalanceProof(inputs);
@@ -341,8 +349,10 @@ export function usePoolRequirements(initialMode?: ProofMode) {
       setStatuses(newStatuses);
       setProofs(newProofs);
 
-      // Return the primary proof directly
-      return primaryProof;
+      return {
+        primary: primaryProof,
+        proofs: newProofs,
+      };
     },
     [
       publicKey,
@@ -382,15 +392,15 @@ export function usePoolRequirements(initialMode?: ProofMode) {
   }, [requirements, resetProofs]);
 
   // Computed state
-  const allMet = useMemo(
-    () => statuses.length > 0 && statuses.every((s) => s.met),
-    [statuses]
-  );
+  const allMet = useMemo(() => {
+    if (requirements.length === 0) return true;
+    return statuses.length > 0 && statuses.every((s) => s.met);
+  }, [requirements.length, statuses]);
 
-  const allProofsGenerated = useMemo(
-    () => statuses.length > 0 && statuses.every((s) => s.proofGenerated),
-    [statuses]
-  );
+  const allProofsGenerated = useMemo(() => {
+    if (requirements.length === 0) return true;
+    return statuses.length > 0 && statuses.every((s) => s.proofGenerated);
+  }, [requirements.length, statuses]);
 
   const anyChecking = useMemo(
     () => isCheckingAll || statuses.some((s) => s.checking) || isGenerating,

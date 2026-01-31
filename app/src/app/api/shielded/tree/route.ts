@@ -1,8 +1,7 @@
-/**
- * Shielded tree helper (dev/sequencer convenience).
- * Stores commitments locally and serves Merkle paths.
- *
- * Production: replace with a dedicated sequencer + database.
+/*
+ * shielded tree helper
+ * stores commitments locally and serves merkle paths
+ * production should move this to a real sequencer + db
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
         }
         const { index, root } = await insertCommitment(pool_id, commitment);
 
-        // Optional: update on-chain root via relayer authority
+        // optional: update on-chain root via relayer authority
         const programId = process.env.NEXT_PUBLIC_PROGRAM_ID;
         const rootAuthorityEnv = process.env.ROOT_AUTHORITY_PRIVATE_KEY;
         const rpcUrl = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com';
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
                     authority = Keypair.fromSecretKey(secret);
                     authorityUsed = 'ROOT_AUTHORITY_PRIVATE_KEY';
                 } catch {
-                    // Fall through to deployer.json
+                    // fall through to deployer.json
                 }
             }
 
@@ -78,27 +77,29 @@ export async function POST(req: NextRequest) {
                 .digest()
                 .subarray(0, 8);
 
-            // Root is a field element; gnark witness uses big-endian encoding.
+            // root is a field element; gnark witness uses big-endian encoding
             const rootBytes = Buffer.from(fieldToBeBytes32(root));
             const includedLeaves = Buffer.alloc(8);
 
-            // Use on-chain next_index so the root update passes the program constraint.
+            // use on-chain next_index so the root update passes the program constraint
             let includedLeavesValue = BigInt(index + 1);
             let onchainNextIndex: string | null = null;
             try {
                 const info = await connection.getAccountInfo(shieldedPool);
                 if (info?.data) {
                     const coder = new BorshCoder(idl as Idl);
-                    const decoded = coder.accounts.decode('ShieldedPool', info.data) as { nextIndex?: unknown };
-                    const nextIndex = (decoded as { nextIndex?: { toString: () => string } }).nextIndex;
-                    if (nextIndex) {
+                    const decoded = coder.accounts.decode('ShieldedPool', info.data) as Record<string, unknown>;
+                    const nextIndex =
+                        (decoded.nextIndex as { toString?: () => string } | undefined) ??
+                        (decoded.next_index as { toString?: () => string } | undefined);
+                    if (nextIndex?.toString) {
                         const nextIndexStr = nextIndex.toString();
                         onchainNextIndex = nextIndexStr;
                         includedLeavesValue = BigInt(nextIndexStr);
                     }
                 }
             } catch {
-                // Fall back to local index when decode fails.
+                // fall back to local index when decode fails
             }
 
             includedLeaves.writeBigUInt64LE(includedLeavesValue);
@@ -134,7 +135,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ success: true, index, root, rootUpdate, authorityUsed });
     } catch (e) {
-        return NextResponse.json({ success: false, error: e instanceof Error ? e.message : 'Unknown' }, { status: 500 });
+        const message = e instanceof Error ? e.message : 'Unknown';
+        console.error('shielded tree error:', message, e);
+        return NextResponse.json({
+            success: false,
+            error: message,
+        }, { status: 500 });
     }
 }
 

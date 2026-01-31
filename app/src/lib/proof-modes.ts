@@ -1,19 +1,10 @@
-/**
- * Proof Mode Configurations
- * 
- * NOTE: Circuits are simplified due to Sunspot (Groth16 prover) limitations
- * with large field elements from Pedersen hashes. Production versions should
- * use full cryptographic commitments once the prover is fixed.
- */
+/* proof mode configs */
 
 import { PoolRequirement, MinBalanceRequirement, TokenHolderRequirement, ExclusionRequirement } from '@/types/pool';
 
-export type ProofMode = 'min_balance' | 'token_holder' | 'exclusion' | 'all';
+export type ProofMode = 'shielded' | 'min_balance' | 'token_holder' | 'exclusion' | 'all';
 
-/**
- * Empty blacklist root for the simplified exclusion circuit
- * "0" represents an empty blacklist where all addresses pass
- */
+/* empty blacklist root */
 export const EMPTY_TREE_ROOT = '0';
 
 export interface ProofModeConfig {
@@ -26,9 +17,7 @@ export interface ProofModeConfig {
     color: string;
 }
 
-/**
- * Get the token mint addresses from environment
- */
+/* get token mint addresses from env */
 function getTokenMints() {
     return {
         tokenA: process.env.NEXT_PUBLIC_TOKEN_A_MINT || 'BzzNnKq1sJfkeUH7iyi823HDwCBSxYBx4s3epbvpvYqk',
@@ -36,10 +25,17 @@ function getTokenMints() {
     };
 }
 
-/**
- * Proof mode configurations
- */
+/* proof mode configurations */
 export const PROOF_MODES: Record<ProofMode, ProofModeConfig> = {
+    shielded: {
+        id: 'shielded',
+        name: 'Shielded Swap',
+        description: 'Swap using shielded deposits and on-chain proof verification',
+        shortDescription: 'Shielded spend',
+        icon: '🕶️',
+        color: 'slate',
+        requirements: [],
+    },
     min_balance: {
         id: 'min_balance',
         name: 'Min Balance',
@@ -159,7 +155,7 @@ export function getAllProofModes(): ProofModeConfig[] {
 /**
  * Default proof mode
  */
-export const DEFAULT_PROOF_MODE: ProofMode = 'token_holder';
+export const DEFAULT_PROOF_MODE: ProofMode = 'shielded';
 
 /**
  * Storage key for persisting proof mode selection

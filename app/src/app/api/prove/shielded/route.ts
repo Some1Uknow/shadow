@@ -1,6 +1,6 @@
-/**
- * Shielded Spend Proof API
- * Proves ownership of a shielded note + nullifier + binds recipient/amount/mint/pool.
+/*
+ * shielded spend proof api
+ * proves note ownership and binds recipient, amount, mint, and pool
  */
 
 import { NextRequest, NextResponse } from 'next/server';

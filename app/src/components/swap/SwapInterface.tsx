@@ -61,10 +61,13 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
         reset: resetRequirements,
     } = usePoolRequirements();
 
+    const requiresEligibilityProofs = requirements.length > 0;
+
     // 3. Execution Logic
     const { isSwapping, executeSwap } = useSwapExecution({
         poolConfig,
         generateAllProofs,
+        requiresEligibilityProofs,
         onSwapComplete: (sig) => {
             setTxSignature(sig);
             onSwapComplete?.(sig);
@@ -92,6 +95,7 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
     const fromBalance = direction === 'AtoB' ? balanceA : balanceB;
     const toBalance = direction === 'AtoB' ? balanceB : balanceA;
     const [reserveIn, reserveOut] = direction === 'AtoB' ? [reserveA, reserveB] : [reserveB, reserveA];
+    const inputMint = direction === 'AtoB' ? poolConfig?.tokenAMint : poolConfig?.tokenBMint;
 
     const inputAmount = parseFloat(amountIn) || 0;
 
@@ -115,14 +119,15 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
     // 6. Effects
     useEffect(() => {
         if (inputAmount > 0 && publicKey) {
-            const timeout = setTimeout(() => checkAllRequirements(inputAmount), DEBOUNCE_MS);
+            const timeout = setTimeout(() => checkAllRequirements(inputAmount, inputMint), DEBOUNCE_MS);
             return () => clearTimeout(timeout);
         }
-    }, [inputAmount, publicKey, checkAllRequirements, proofMode]);
+    }, [inputAmount, publicKey, checkAllRequirements, proofMode, inputMint]);
 
     // 7. Handlers wrapped with execution hook
     const handleSwapClick = async () => {
         setError(null);
+        await checkAllRequirements(inputAmount, inputMint);
         await executeSwap(
             inputAmount,
             minOutput,
@@ -146,7 +151,7 @@ export function SwapInterface({ onSwapComplete }: SwapInterfaceProps) {
         setProofMode(mode);
         // Re-check requirements with new mode
         if (inputAmount > 0) {
-            setTimeout(() => checkAllRequirements(inputAmount), 100);
+            setTimeout(() => checkAllRequirements(inputAmount, inputMint), 100);
         }
     };
 

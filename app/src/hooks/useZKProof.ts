@@ -15,7 +15,8 @@ interface ProofResult {
 
 /** Min Balance circuit inputs */
 export interface MinBalanceInputs {
-  balance: number;
+  owner: string;
+  token_mint: string;
   threshold: number;
 }
 
@@ -27,7 +28,7 @@ export interface TokenHolderInputs {
   min_required: string;      // Minimum required tokens as string
 }
 
-/** SMT Exclusion circuit inputs (simplified) */
+/** SMT Exclusion circuit inputs */
 export interface ExclusionInputs {
   address: string;           // Address to prove exclusion for
   blacklist_root?: string;   // Blacklist root (defaults to "0" for empty blacklist)
@@ -74,16 +75,16 @@ export const CIRCUIT_INFO: Record<CircuitType, CircuitInfo> = {
     name: 'Min Balance',
     description: 'Proves balance ≥ threshold without revealing actual balance',
     useCases: ['Pool access', 'Tier verification', 'Eligibility checks'],
-    privateInputs: ['balance'],
-    publicInputs: ['threshold'],
+    privateInputs: ['balance', 'owner', 'account_data'],
+    publicInputs: ['state_root', 'threshold', 'token_mint'],
   },
   token_holder: {
     type: 'token_holder',
     name: 'Token Holder',
     description: 'Proves ownership of specific token ≥ minimum without revealing amount or address',
     useCases: ['Token-gated access', 'DAO voting eligibility', 'Whale verification'],
-    privateInputs: ['token_amount', 'user_address'],
-    publicInputs: ['token_mint', 'min_required'],
+    privateInputs: ['token_amount', 'user_address', 'account_data'],
+    publicInputs: ['token_mint', 'state_root', 'min_required'],
   },
   smt_exclusion: {
     type: 'smt_exclusion',
@@ -121,14 +122,17 @@ export function useZKProofMulti() {
     setCurrentCircuit('min_balance');
 
     try {
-      const balanceUnits = Math.floor(inputs.balance * 1e9).toString();
       const thresholdUnits = Math.floor(inputs.threshold * 1e9).toString();
 
 
       const response = await fetch('/api/prove', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ balance: balanceUnits, threshold: thresholdUnits }),
+        body: JSON.stringify({
+          owner: inputs.owner,
+          token_mint: inputs.token_mint,
+          threshold: thresholdUnits,
+        }),
       });
 
       const data = (await response.json()) as {
@@ -153,7 +157,7 @@ export function useZKProofMulti() {
       setProofContext({
         circuit: 'min_balance',
         generatedAt: Date.now(),
-        minBalance: { balance: inputs.balance, threshold: inputs.threshold },
+        minBalance: { balance: 0, threshold: inputs.threshold },
       });
 
       return result;

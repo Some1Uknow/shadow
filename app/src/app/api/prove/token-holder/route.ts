@@ -1,14 +1,17 @@
-/**
- * Token Holder Proof API
- * Proves token ownership >= minimum requirement.
+/*
+ * token holder proof api
+ * proves token ownership >= minimum requirement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress } from '@solana/spl-token';
 import {
     checkRequiredTools,
     writeProverToml,
     addressToField,
 } from '@/lib/proof-utils';
+import { hashAccountData, readU64Le } from '@/lib/account-hash';
 import {
     ProofErrorCodes,
     createErrorResponse,
@@ -26,8 +29,6 @@ import {
 
 const CIRCUIT_NAME = 'token_holder';
 
-// Generate Proof
-
 export async function POST(request: NextRequest) {
     try {
         const { token_amount, user_address, token_mint, min_required } = await request.json();
@@ -36,17 +37,7 @@ export async function POST(request: NextRequest) {
             return missingParamsError(['token_amount', 'user_address', 'token_mint', 'min_required']);
         }
 
-        const tokenAmountNum = parseFloat(token_amount);
-        const minRequiredNum = parseFloat(min_required);
-
-        if (tokenAmountNum < minRequiredNum) {
-            return createErrorResponse(
-                ProofErrorCodes.INSUFFICIENT_HOLDINGS,
-                'Insufficient token holdings',
-                400,
-                `Have ${token_amount}, need ${min_required}`
-            );
-        }
+        const minRequiredBase = BigInt(min_required);
 
         const tools = await checkRequiredTools();
         if (!tools.allAvailable) {
@@ -57,43 +48,48 @@ export async function POST(request: NextRequest) {
         const userAddressField = addressToField(user_address);
         const tokenMintField = addressToField(token_mint);
 
-        // Generate dummy Merkle inputs for Demo
-        // Corresponds to 'Trivial Hash' in circuit
+        const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || 'https://api.devnet.solana.com';
+        const connection = new Connection(rpcEndpoint, 'confirmed');
+        const ownerKey = new PublicKey(user_address);
+        const mintKey = new PublicKey(token_mint);
+        const ata = await getAssociatedTokenAddress(mintKey, ownerKey);
+        const accountInfo = await connection.getAccountInfo(ata);
+        if (!accountInfo?.data) {
+            return createErrorResponse(
+                ProofErrorCodes.INSUFFICIENT_HOLDINGS,
+                'Token account not found',
+                404
+            );
+        }
+        const accountData = new Uint8Array(accountInfo.data);
+        if (accountData.length < 165) {
+            return createErrorResponse(
+                ProofErrorCodes.INSUFFICIENT_HOLDINGS,
+                'Invalid token account data',
+                400
+            );
+        }
+        const amountBn = BigInt(readU64Le(accountData, 64));
+        if (amountBn < minRequiredBase) {
+            return createErrorResponse(
+                ProofErrorCodes.INSUFFICIENT_HOLDINGS,
+                'Insufficient token holdings',
+                400,
+                `Have ${amountBn.toString()}, need ${min_required}`
+            );
+        }
 
-        // 1. Account Data (165 bytes)
-        const dummyAccountData = Array(165).fill(0).map(() => 0);
+        const computedRoot = hashAccountData(accountData);
 
-        // 2. Merkle Path (32 fields) & Indices
-        const dummyMerklePath = Array(32).fill(0).map(() => 0);
-        const dummyMerkleIndices = "0";
-
-        // 3. Compute Expected Root
-        // Leaf = Amount + Address + Mint
-        // Root = Leaf + 32 (adding 1 for 32 levels)
-
-        // Note: addressToField returns a string representation of the field element
-        const amountBn = BigInt(token_amount); // Assuming integer amount for simplicity
-        const addressBn = BigInt(userAddressField);
-        const mintBn = BigInt(tokenMintField);
-
-        // Leaf Hash = Amount + Address + Mint
-        const leafHash = amountBn + addressBn + mintBn;
-
-        // Root Hash = Leaf + 32
-        const computedRoot = leafHash + BigInt(32);
-
-        // Write Prover.toml with all required inputs
         const proverContent = `
 # Private inputs
-token_amount = "${token_amount}"
+token_amount = "${amountBn.toString()}"
 user_address = "${userAddressField}"
-account_data = ${JSON.stringify(dummyAccountData)}
-merkle_path = ${JSON.stringify(dummyMerklePath.map(x => x.toString()))}
-merkle_indices = "${dummyMerkleIndices}"
+account_data = ${JSON.stringify(Array.from(accountData))}
 
 # Public inputs
 token_mint = "${tokenMintField}"
-state_root = "${computedRoot.toString()}"
+state_root = "${computedRoot}"
 min_required = "${min_required}"
 `.trim();
 
@@ -125,12 +121,10 @@ min_required = "${min_required}"
     }
 }
 
-// Health Check
-
 export async function GET() {
     return NextResponse.json({
         circuit: CIRCUIT_NAME,
-        description: 'Proves token ownership >= minimum (simplified for Sunspot compatibility)',
-        inputs: { private: ['token_amount', 'user_address'], public: ['token_mint', 'min_required'] },
+        description: 'Proves token ownership >= minimum',
+        inputs: { private: ['token_amount', 'user_address', 'account_data'], public: ['token_mint', 'state_root', 'min_required'] },
     });
 }

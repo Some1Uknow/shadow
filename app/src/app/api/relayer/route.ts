@@ -9,6 +9,7 @@ import {
 } from '@solana/web3.js';
 import { BorshCoder, type Idl } from '@coral-xyz/anchor';
 import idl from '@/idl/zkgate.json';
+import { createCircuitConfig, verifyProof } from '@/lib/proof-generator';
 
 // Real Relayer Implementation
 // Uses a backend hot wallet to sign and pay for user transactions (Gasless / Private)
@@ -51,13 +52,85 @@ function decodeNullifierHash(ixData: Buffer): { name: string; hash: Buffer } | n
     }
 }
 
+function decodeProofAndPublic(ixData: Buffer): { proof?: Buffer; publicInputs?: Buffer } {
+    try {
+        const coder = new BorshCoder(idl as Idl);
+        const decoded = coder.instruction.decode(ixData);
+        if (decoded) {
+            const data = decoded.data as Record<string, unknown>;
+            const proofRaw = data['proof'] ?? data['zk_proof'];
+            const publicRaw = data['public_inputs'] ?? data['publicInputs'];
+            const proof =
+                proofRaw instanceof Uint8Array || Array.isArray(proofRaw) || Buffer.isBuffer(proofRaw)
+                    ? Buffer.from(proofRaw as Uint8Array)
+                    : undefined;
+            const publicInputs =
+                publicRaw instanceof Uint8Array || Array.isArray(publicRaw) || Buffer.isBuffer(publicRaw)
+                    ? Buffer.from(publicRaw as Uint8Array)
+                    : undefined;
+            return { proof, publicInputs };
+        }
+    } catch {
+        // fall through to manual decode
+    }
+
+    try {
+        let offset = 8; // discriminator
+        if (ixData.length < offset + 4) return {};
+        const proofLen = ixData.readUInt32LE(offset);
+        offset += 4;
+        const proof = ixData.slice(offset, offset + proofLen);
+        offset += proofLen;
+        if (ixData.length < offset + 4) return { proof };
+        const publicLen = ixData.readUInt32LE(offset);
+        offset += 4;
+        const publicInputs = ixData.slice(offset, offset + publicLen);
+        return { proof, publicInputs };
+    } catch {
+        return {};
+    }
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { proof, publicInputs, instructionData, accounts } = body;
+        const { proof, publicInputs, instructionData, accounts, eligibilityProofs, requireEligibility } = body;
 
         if (!proof || !publicInputs || !instructionData || !accounts) {
             return NextResponse.json({ success: false, error: 'Missing parameters' }, { status: 400 });
+        }
+
+        if (requireEligibility && (!eligibilityProofs || eligibilityProofs.length === 0)) {
+            return NextResponse.json({ success: false, error: 'Eligibility proofs required' }, { status: 400 });
+        }
+
+        if (Array.isArray(eligibilityProofs) && eligibilityProofs.length > 0) {
+            for (const entry of eligibilityProofs) {
+                const circuitName =
+                    entry.type === 'min_balance'
+                        ? 'min_balance'
+                        : entry.type === 'token_holder'
+                            ? 'token_holder'
+                            : entry.type === 'exclusion'
+                                ? 'smt_exclusion'
+                                : null;
+                if (!circuitName || !entry.proof) {
+                    return NextResponse.json({ success: false, error: 'Invalid eligibility proof' }, { status: 400 });
+                }
+                const config = createCircuitConfig(circuitName);
+                try {
+                    await verifyProof(
+                        config,
+                        new Uint8Array(entry.proof),
+                        new Uint8Array(entry.publicInputs)
+                    );
+                } catch (e) {
+                    return NextResponse.json({
+                        success: false,
+                        error: e instanceof Error ? e.message : 'Eligibility proof verification failed',
+                    }, { status: 400 });
+                }
+            }
         }
 
         console.log('--- RELAYER RECEIVED REQUEST ---');
@@ -87,6 +160,9 @@ export async function POST(req: Request) {
         // We use pure web3.js TransactionInstruction to avoid Anchor imports (which caused build errors)
 
         const ixData = Buffer.from(instructionData, 'base64');
+        const decodedProof = decodeProofAndPublic(ixData);
+        const requestProof = Array.isArray(proof) ? Buffer.from(proof) : null;
+        const requestPublic = Array.isArray(publicInputs) ? Buffer.from(publicInputs) : null;
         const decodedNullifier = decodeNullifierHash(ixData);
         let nullifierFromPublic: Buffer | null = null;
         if (Array.isArray(publicInputs) && publicInputs.length >= 64) {
@@ -128,6 +204,15 @@ export async function POST(req: Request) {
             derivedNullifierPdaAlt: nullifierPdaAlt.toBase58(),
             providedNullifierPda: accounts.nullifierAccount || null,
             usingProvidedNullifierPda: providedNullifierPda ? true : false,
+            proofLen: decodedProof.proof?.length ?? null,
+            publicInputsLen: decodedProof.publicInputs?.length ?? null,
+            proofCommitments: decodedProof.proof && decodedProof.proof.length >= 260
+                ? decodedProof.proof.readUInt32BE(256)
+                : null,
+            requestProofLen: requestProof?.length ?? null,
+            requestPublicLen: requestPublic?.length ?? null,
+            proofPrefix: decodedProof.proof?.subarray(0, 8)?.toString('hex') ?? null,
+            requestProofPrefix: requestProof?.subarray(0, 8)?.toString('hex') ?? null,
         };
 
         const instruction = new TransactionInstruction({

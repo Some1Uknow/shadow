@@ -2,6 +2,12 @@ export interface RelayerRequest {
     proof: Uint8Array;
     publicInputs: Uint8Array;
     instructionData: Buffer; // The serialized Anchor instruction
+    eligibilityProofs?: Array<{
+        type: string;
+        proof: number[];
+        publicInputs: number[];
+    }>;
+    requireEligibility?: boolean;
     accounts: Record<string, string>; // Map of account names to Pubkeys
 }
 
@@ -9,6 +15,9 @@ export interface RelayerResponse {
     signature: string;
     success: boolean;
     error?: string;
+    details?: unknown;
+    logs?: string[];
+    debug?: Record<string, unknown>;
 }
 
 export class RelayerService {
@@ -25,6 +34,8 @@ export class RelayerService {
                     proof: Array.from(req.proof),
                     publicInputs: Array.from(req.publicInputs),
                     instructionData: req.instructionData.toString('base64'),
+                    eligibilityProofs: req.eligibilityProofs,
+                    requireEligibility: req.requireEligibility,
                     accounts: req.accounts,
                 }),
             });

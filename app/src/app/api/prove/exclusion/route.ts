@@ -1,6 +1,6 @@
-/**
- * SMT Exclusion Proof API
- * Proves an address is NOT on a blacklist.
+/*
+ * smt exclusion proof api
+ * proves an address is not on a blacklist
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,8 +25,6 @@ import {
 } from '@/lib/proof-generator';
 
 const CIRCUIT_NAME = 'smt_exclusion';
-
-// Generate Proof
 
 export async function POST(request: NextRequest) {
     try {
@@ -78,17 +76,13 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// Health Check
-
 export async function GET() {
     return NextResponse.json({
         circuit: CIRCUIT_NAME,
-        description: 'Proves address is NOT on a blacklist (simplified for Sunspot compatibility)',
+        description: 'Proves address is NOT on a blacklist',
         inputs: { private: ['address', 'address_hash'], public: ['blacklist_root'] },
     });
 }
-
-// Get Formatted Inputs
 
 export async function PUT(request: NextRequest) {
     const { address } = await request.json();

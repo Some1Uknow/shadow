@@ -26,6 +26,12 @@ export function ProofModeSelector({ currentMode, onModeChange, disabled }: Proof
 
     // Premium accent colors
     const accentColors: Record<string, { primary: string; glow: string; bg: string; border: string }> = {
+        slate: {
+            primary: '#94a3b8',
+            glow: 'rgba(148, 163, 184, 0.45)',
+            bg: 'rgba(148, 163, 184, 0.12)',
+            border: 'rgba(148, 163, 184, 0.25)',
+        },
         cyan: {
             primary: '#22d3ee',
             glow: 'rgba(34, 211, 238, 0.5)',
@@ -53,7 +59,7 @@ export function ProofModeSelector({ currentMode, onModeChange, disabled }: Proof
     };
 
     const currentModeData = PROOF_MODES[currentMode];
-    const colors = accentColors[currentModeData.color];
+    const colors = accentColors[currentModeData.color] || accentColors.slate;
 
     // Smooth scroll to index
     const scrollToIndex = (index: number) => {
@@ -154,7 +160,7 @@ export function ProofModeSelector({ currentMode, onModeChange, disabled }: Proof
                 {/* Navigation dots */}
                 <div className="flex items-center gap-1.5">
                     {modes.map((mode, index) => {
-                        const dotColors = accentColors[mode.color];
+                        const dotColors = accentColors[mode.color] || accentColors.slate;
                         const isActive = index === activeIndex;
                         return (
                             <button
@@ -206,7 +212,7 @@ export function ProofModeSelector({ currentMode, onModeChange, disabled }: Proof
                     onMouseLeave={handleMouseUp}
                 >
                     {modes.map((mode, index) => {
-                        const cardColors = accentColors[mode.color];
+                        const cardColors = accentColors[mode.color] || accentColors.slate;
                         const isActive = currentMode === mode.id;
 
                         return (

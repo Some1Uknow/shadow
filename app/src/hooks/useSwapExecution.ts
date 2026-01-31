@@ -4,6 +4,7 @@ import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { PublicKey, SystemProgram } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { useProgram } from '@/hooks/useProgram';
+import type { GeneratedProofs } from '@/hooks/usePoolRequirements';
 import {
     COMPUTE_UNITS,
     PRIORITY_FEE_MICROLAMPORTS,
@@ -17,12 +18,15 @@ import { PoolConfig } from '@/types/pool';
 
 interface UseSwapExecutionProps {
     poolConfig: PoolConfig | null; // We'll infer this or import it properly
-    generateAllProofs?: (amount: number) => Promise<{ proof: Uint8Array; publicInputs: Uint8Array } | null>;
+    generateAllProofs?: (amount: number, swapMint?: PublicKey) => Promise<GeneratedProofs | null>;
+    requiresEligibilityProofs?: boolean;
     onSwapComplete?: (txSignature: string) => void;
 }
 
 export function useSwapExecution({
     poolConfig,
+    generateAllProofs,
+    requiresEligibilityProofs,
     onSwapComplete,
 }: UseSwapExecutionProps) {
     const { publicKey, signTransaction } = useWallet();
@@ -54,6 +58,20 @@ export function useSwapExecution({
                 const isAtoB = direction === 'AtoB';
                 const amountInLamports = new BN(Math.floor(amountIn * LAMPORTS_MULTIPLIER));
                 const minOutLamports = new BN(Math.floor(minOutput * LAMPORTS_MULTIPLIER));
+                const mintIn = isAtoB ? poolConfig.tokenAMint : poolConfig.tokenBMint;
+
+                let eligibilityProofs: Array<{ type: string; proof: number[]; publicInputs: number[] }> = [];
+                if (requiresEligibilityProofs && generateAllProofs) {
+                    const proofBundle = await generateAllProofs(amountIn, mintIn);
+                    if (!proofBundle?.primary) {
+                        throw new Error('Eligibility proof generation failed');
+                    }
+                    eligibilityProofs = Array.from(proofBundle.proofs.entries()).map(([type, proof]) => ({
+                        type,
+                        proof: Array.from(proof.proof),
+                        publicInputs: Array.from(proof.publicInputs),
+                    }));
+                }
 
                 // 3. Get Token Accounts
                 const userTokenA = await getAssociatedTokenAddress(poolConfig.tokenAMint, publicKey);
@@ -64,7 +82,7 @@ export function useSwapExecution({
                 const inputRootHistory = isAtoB ? poolConfig.shieldedRootHistoryA : poolConfig.shieldedRootHistoryB;
                 const reserveIn = isAtoB ? poolConfig.tokenAReserve : poolConfig.tokenBReserve;
                 const reserveOut = isAtoB ? poolConfig.tokenBReserve : poolConfig.tokenAReserve;
-                const mintIn = isAtoB ? poolConfig.tokenAMint : poolConfig.tokenBMint;
+                // mintIn already set above
 
                 // 4. Create shielded note + commitment
                 const mintField = addressToField(mintIn.toBase58());
@@ -181,7 +199,7 @@ export function useSwapExecution({
                 const ix = await program.methods
                     .swapPrivate(
                         Buffer.from(proofData.proof),
-                        Buffer.from(proofData.publicInputs),
+                        Buffer.from(publicInputsBytes),
                         amountInLamports,
                         minOutLamports,
                         isAtoB, // Direction flag
@@ -209,8 +227,10 @@ export function useSwapExecution({
                 const { RelayerService } = await import('@/api/relayer');
                 const result = await RelayerService.submitTransaction({
                     proof: proofData.proof,
-                    publicInputs: proofData.publicInputs,
+                    publicInputs: publicInputsBytes,
                     instructionData: ix.data as Buffer,
+                    eligibilityProofs: eligibilityProofs.length > 0 ? eligibilityProofs : undefined,
+                    requireEligibility: requiresEligibilityProofs,
                     accounts: {
                         pool: poolConfig.poolPda.toBase58(),
                         inputShieldedPool: inputShieldedPool.toBase58(),
@@ -227,7 +247,14 @@ export function useSwapExecution({
                 });
 
                 if (!result.success || !result.signature) {
-                    throw new Error(result.error || 'Relayer failed to execute swap');
+                    if (result.logs && result.logs.length > 0) {
+                        console.error('Relayer logs:', result.logs);
+                    }
+                    if (result.debug) {
+                        console.error('Relayer debug:', result.debug);
+                    }
+                    const detail = result.error || (result.details ? JSON.stringify(result.details) : null);
+                    throw new Error(detail || 'Relayer failed to execute swap');
                 }
 
                 const signature = result.signature;
@@ -260,6 +287,8 @@ export function useSwapExecution({
             program,
             poolConfig,
             connection,
+            generateAllProofs,
+            requiresEligibilityProofs,
             onSwapComplete,
         ]
     );

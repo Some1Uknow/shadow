@@ -16,7 +16,7 @@ export const HowItWorksSection = () => {
                                 <span className="text-emerald-400/90">Works</span>
                             </h2>
                             <p className="text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-lg">
-                                A seamless flow from wallet connection to ZK‑verified eligibility. No manual proof generation — everything runs automatically.
+                                A simple flow from wallet connection to proof and swap. No manual proof steps. Everything runs automatically.
                             </p>
                         </div>
 

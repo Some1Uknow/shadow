@@ -40,7 +40,7 @@ export const HeroSection = () => {
                                     </span>
                                 </h1>
                                 <p className="text-lg md:text-xl text-white/60 font-light leading-relaxed max-w-xl animate-page-enter-delay-2">
-                                    Swap through a shielded pool and prove eligibility without exposing balances or addresses. Shielded spend proofs are verified on chain, and eligibility proofs are verified by the relayer today.
+                                    Swap through a shielded pool and prove eligibility without exposing balances or addresses. The shielded spend proof is verified on chain, and eligibility proofs are checked by the relayer in all proofs mode.
                                 </p>
 
                                 <div className="pt-4 animate-page-enter-delay-3">
@@ -64,7 +64,7 @@ export const HeroSection = () => {
                                     Start Trading
                                 </h2>
                                 <p className="text-base md:text-lg text-white/50 mb-6 font-light leading-relaxed">
-                                    Connect your wallet to access ZK-verified swaps on Solana.
+                                    Connect your wallet to access private eligibility swaps on Solana.
                                 </p>
 
                                 <div className="space-y-4 mb-8">

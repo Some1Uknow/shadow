@@ -32,11 +32,11 @@ export const UseCasesSection = () => {
                         {/* Text Right */}
                         <div className="space-y-6 order-1 lg:order-2 lg:sticky lg:top-8">
                             <h2 className="text-4xl md:text-5xl font-normal tracking-tight leading-tight">
-                                <span className="text-white/95">Real-World</span><br />
+                                <span className="text-white/95">Real World</span><br />
                                 <span className="text-cyan-400/90">Use Cases</span>
                             </h2>
                             <p className="text-white/50 text-lg md:text-xl font-light leading-relaxed max-w-lg">
-                                ZK-verified eligibility enables new possibilities in DeFi — from compliant institutional pools to private governance.
+                                Private eligibility unlocks new pools and rules without exposing user data.
                             </p>
                         </div>
                     </div>

@@ -14,25 +14,25 @@ export const ProblemSection = () => {
                             <div className="animate-card-enter">
                                 <ProblemCard
                                     title="Balance Exposure"
-                                    description="Eligibility checks often force you to reveal your full holdings"
+                                    description="Eligibility checks often force you to show full holdings"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-1">
                                 <ProblemCard
-                                    title="Eligibility Doxxing"
-                                    description="Proving thresholds on chain links your wallet to sensitive data"
+                                    title="Eligibility Exposure"
+                                    description="Proving thresholds links your wallet to sensitive data"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-2">
                                 <ProblemCard
                                     title="Wallet Linkage"
-                                    description="Repeated proofs create a visible identity trail across pools"
+                                    description="Repeated checks can create a visible identity trail"
                                 />
                             </div>
                             <div className="animate-card-enter-delay-3">
                                 <ProblemCard
-                                    title="Compliance Paradox"
-                                    description="You must reveal data to prove you should not reveal data"
+                                    title="Compliance Tradeoff"
+                                    description="You share data just to prove you should not share data"
                                 />
                             </div>
                         </div>

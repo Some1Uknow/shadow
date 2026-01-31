@@ -16,7 +16,7 @@ export const CTASection = () => {
                         <span className="text-violet-400/90">with Eligibility Privacy?</span>
                     </h2>
                     <p className="text-white/60 text-base md:text-lg font-light max-w-xl mx-auto mb-8 md:mb-10">
-                        Connect your wallet and experience ZK‑verified eligibility on Solana
+                        Connect your wallet and try private eligibility swaps on Solana
                     </p>
                     <WalletMultiButton />
 

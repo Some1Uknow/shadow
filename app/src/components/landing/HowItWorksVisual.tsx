@@ -39,7 +39,7 @@ export function HowItWorksVisual() {
                 </div>
                 <div className="flex-1">
                     <h3 className="text-white/90 font-semibold mb-1">Enter Amount</h3>
-                    <p className="text-white/50 text-sm">App checks eligibility in real-time</p>
+                    <p className="text-white/50 text-sm">Pick a proof mode and amount</p>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@ export function HowItWorksVisual() {
                 </div>
                 <div className="flex-1">
                     <h3 className="text-white/90 font-semibold mb-1">Auto-Generate Proof</h3>
-                    <p className="text-white/50 text-sm">ZK proof creates and verifies on-chain</p>
+                    <p className="text-white/50 text-sm">Proofs are generated in the background</p>
                 </div>
             </div>
 
@@ -67,7 +67,7 @@ export function HowItWorksVisual() {
                 </div>
                 <div className="flex-1">
                     <h3 className="text-white/90 font-semibold mb-1">Swap Executes</h3>
-                    <p className="text-white/50 text-sm">Trade completes, balance stays private</p>
+                    <p className="text-white/50 text-sm">Swap settles, eligibility stays private</p>
                 </div>
             </div>
 

@@ -11,7 +11,8 @@ import {
     getAssociatedTokenAddress,
     createAssociatedTokenAccountInstruction,
     getAccount,
-    createMintToInstruction
+    createTransferInstruction,
+    getMint
 } from '@solana/spl-token';
 import fs from 'fs';
 import path from 'path';
@@ -71,10 +72,11 @@ export async function POST(request: Request) {
         async function addMint(mint: PublicKey, amount: number) {
             if (amount <= 0) return;
 
-            const decimals = 9; // assuming 9 decimals for now
-            const rawAmount = BigInt(Math.floor(amount * Math.pow(10, decimals)));
+            const mintInfo = await getMint(connection, mint);
+            const rawAmount = BigInt(Math.floor(amount * Math.pow(10, mintInfo.decimals)));
 
             const recipientATA = await getAssociatedTokenAddress(mint, recipientPubkey);
+            const faucetATA = await getAssociatedTokenAddress(mint, deployer!.publicKey);
 
             // check if recipient ata exists
             try {
@@ -91,10 +93,17 @@ export async function POST(request: Request) {
                 );
             }
 
-            // mint directly to recipient
+            // ensure faucet has a source account
+            try {
+                await getAccount(connection, faucetATA);
+            } catch (e) {
+                throw new Error(`Faucet has no token account for mint ${mint.toBase58()}`);
+            }
+
+            // transfer from faucet to recipient
             tx.add(
-                createMintToInstruction(
-                    mint,
+                createTransferInstruction(
+                    faucetATA,
                     recipientATA,
                     deployer!.publicKey,
                     rawAmount

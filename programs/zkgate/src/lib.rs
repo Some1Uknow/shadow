@@ -21,6 +21,7 @@ pub mod zkgate {
     use super::*;
 
     pub fn create_pool(ctx: Context<CreatePool>, init_a: u64, init_b: u64) -> Result<()> {
+        msg!("Instruction: CreatePool");
         let pool = &mut ctx.accounts.pool;
         pool.token_a_mint = ctx.accounts.token_a_mint.key();
         pool.token_b_mint = ctx.accounts.token_b_mint.key();
@@ -36,6 +37,7 @@ pub mod zkgate {
     }
 
     pub fn add_liquidity(ctx: Context<AddLiquidity>, amount_a: u64, amount_b: u64) -> Result<()> {
+        msg!("Instruction: AddLiquidity");
         token::transfer(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -75,6 +77,7 @@ pub mod zkgate {
         proof: Vec<u8>,
         public_inputs: Vec<u8>,
     ) -> Result<()> {
+        msg!("Instruction: ZkSwap");
         
         // 1. Verify that the State Root used in the proof is valid
         let claimed_root: [u8; 32] = public_inputs[0..32].try_into().map_err(|_| ErrorCode::InvalidProof)?;
@@ -103,6 +106,7 @@ pub mod zkgate {
         proof: Vec<u8>,
         public_inputs: Vec<u8>,
     ) -> Result<()> {
+        msg!("Instruction: ZkSwapReverse");
         
         // 1. Verify that the State Root used in the proof is valid
         let claimed_root: [u8; 32] = public_inputs[0..32].try_into().map_err(|_| ErrorCode::InvalidProof)?;
@@ -125,6 +129,7 @@ pub mod zkgate {
     }
 
     pub fn deposit(ctx: Context<DepositShielded>, amount: u64, commitment: [u8; 32]) -> Result<()> {
+        msg!("Instruction: DepositShielded");
         instructions::shielded_pool::deposit_shielded(ctx, amount, commitment)
     }
 
@@ -137,14 +142,17 @@ pub mod zkgate {
         is_a_to_b: bool,
         nullifier_hash: [u8; 32],
     ) -> Result<()> {
+        msg!("Instruction: SwapPrivate");
         instructions::shielded_pool::swap_private(ctx, proof, public_inputs, amount_in, min_out, is_a_to_b, nullifier_hash)
     }
 
     pub fn initialize_shielded_pool(ctx: Context<InitializeShieldedPool>) -> Result<()> {
+        msg!("Instruction: InitializeShieldedPool");
         instructions::shielded_pool::initialize_shielded_pool(ctx)
     }
 
     pub fn initialize_shielded_root_history(ctx: Context<InitializeShieldedRootHistory>) -> Result<()> {
+        msg!("Instruction: InitializeShieldedRootHistory");
         instructions::shielded_pool::initialize_shielded_root_history(ctx)
     }
 
@@ -153,6 +161,7 @@ pub mod zkgate {
         new_root: [u8; 32],
         included_leaves: u64,
     ) -> Result<()> {
+        msg!("Instruction: UpdateShieldedRoot");
         instructions::shielded_pool::update_shielded_root(ctx, new_root, included_leaves)
     }
 
@@ -163,10 +172,12 @@ pub mod zkgate {
         proof: Vec<u8>,
         public_inputs: Vec<u8>,
     ) -> Result<()> {
+        msg!("Instruction: WithdrawShielded");
         instructions::shielded_pool::withdraw_shielded(ctx, amount, nullifier_hash, proof, public_inputs)
     }
 
     pub fn update_roots(ctx: Context<UpdateRoots>, new_root: [u8; 32]) -> Result<()> {
+        msg!("Instruction: UpdateRoots");
         let history = &mut ctx.accounts.history;
         history.append(new_root);
         msg!("Root appended: {:?}", new_root);
@@ -174,6 +185,7 @@ pub mod zkgate {
     }
 
     pub fn initialize_history(ctx: Context<InitializeHistory>) -> Result<()> {
+        msg!("Instruction: InitializeHistory");
         let history = &mut ctx.accounts.history;
         history.authority = ctx.accounts.authority.key();
         history.current_index = 0;

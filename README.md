@@ -1,7 +1,6 @@
 # Shadow DEX
 
 **ZK Gated swaps on Solana.**  
-Hackathon project with real proofs and real devnet swaps.
 
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Devnet-brightgreen)](https://explorer.solana.com/tx/4AeG6yqyqfRhJzBy2apTcCrVEDsEwqgHWsc8uFvdaKnseuYB8SjWC83KidujaELqe6sqGTUhdkK4eCzgNWWnbv3W?cluster=devnet)
 [![Built with Noir](https://img.shields.io/badge/Built%20with-Noir-orange)](https://noir-lang.org)
@@ -46,11 +45,11 @@ We support four proof types:
 - **Private**: your eligibility data, and which shielded note you spend.
 - **Visible on chain**: token mints, amounts, pool, and swap outputs.
 
-This is honest privacy for a hackathon demo. It hides who can trade and why, but not the amounts.
 
 ### Why we chose this
 
-Everyone is chasing full on-chain privacy. We took a different path that is practical today.  
+Everyone is chasing full on-chain privacy, so we decided to take a different path.
+
 We focused on eligibility privacy plus real swaps, so teams can gate access without exposing user data.
 
 ---
@@ -84,22 +83,21 @@ All proofs mode swap flow:
   - Not blacklisted (demo version)
 - Those extra checks do not appear on chain because they are relayer side today.
 
-### A note on proof generation
+### Proof generation
 
 Proofs are generated on the server today because Sunspot is easiest to run there.  
 This is a demo tradeoff, not a design requirement, and can move client side when tooling improves.
 
-### Demo notes
+### Under the hood
 
 - Shielded spend proofs are verified on chain, and eligibility proofs are verified by the relayer.
 - Min balance and token holder proofs are bound to real SPL token account data, but do not yet verify against a global Solana state root.
 - Blacklist exclusion is still simplified in this demo.
 - Root updates require a configured root authority key. The app uses it to keep the on-chain root history in sync with the local tree.
-We are aware of these gaps and are actively working through the next steps below.
 
 ---
 
-## Tech Stack (Simple)
+## Tech Stack
 
 - **Noir** for writing the proof rules
 - **Sunspot** for compiling proofs for Solana
@@ -181,7 +179,7 @@ See [GUIDE.md](GUIDE.md) for full setup and deployment instructions.
 
 ## Testing
 
-### Testing All Proof Modes (For Judges)
+### Testing All Proof Modes 
 
 The swap interface includes a **Proof Mode Selector** that lets you test each proof type:
 
@@ -207,7 +205,6 @@ The swap interface includes a **Proof Mode Selector** that lets you test each pr
 
 - **Durable pool service**: move the local tree to a persistent service that keeps pool roots in sync and exposes simple APIs.
 - **Shielded outputs**: create new notes for recipients so amounts and recipients are not visible on chain.
-- **Stronger privacy by default**: batch deposits, add delays, and route through multiple relayers to reduce timing clues.
 - **Production hardening**: safer key handling, rate limits, monitoring, audits, and reproducible builds.
 
 ---

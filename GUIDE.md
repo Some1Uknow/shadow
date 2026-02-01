@@ -2,7 +2,7 @@
 
 Get the ZK-verified DEX running on Solana devnet.
 
-**Time:** ~15 minutes
+**Time:** ~10 minutes (Takes long so using through live demo is recommended)
 
 ---
 
@@ -44,30 +44,6 @@ cd ~/sunspot/go
 go build -o sunspot .
 sudo mv sunspot /usr/local/bin/
 ```
-
----
-
-## Quick Start (Use Our Deployment)
-
-If you just want to test without deploying:
-
-```bash
-git clone <repo> shadow
-cd shadow
-npm install
-
-# Setup environment for tests (optional)
-cp .env.example .env
-
-# Setup frontend
-cd app && pnpm install
-cp .env.local.example .env.local
-pnpm dev
-```
-
-Open http://localhost:3000
-
-**Note:** You still need `nargo` and `sunspot` installed for proof generation.
 
 ---
 

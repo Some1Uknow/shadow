@@ -48,7 +48,7 @@ We support four proof types:
 
 ### Why we chose this
 
-Everyone is chasing full on-chain privacy, so we decided to take a different path.
+Everyone is chasing full on-chain privacy, so we decided to take a more niche and different path.
 
 We focused on eligibility privacy plus real swaps, so teams can gate access without exposing user data.
 

@@ -6,11 +6,6 @@ This is a short explanation of how Shadow works under the hood.
 
 Shadow lets a user prove they meet a swap requirement without revealing the data behind that proof.
 
-## What is private today
-
-- Private: the user eligibility data, and which shielded note they spent.
-- Visible on chain: token mints, amounts, pool, and the swap outputs.
-
 ## The basic flow
 
 1. The user selects a proof mode and a swap amount.
@@ -104,17 +99,7 @@ Sunspot currently runs most smoothly in a server environment.
 That is why the proof APIs live on the server today.  
 This is a demo tradeoff and can move client-side when tooling improves.
 
-## Demo limitations we are aware of
-
-Min balance and token holder proofs are bound to real SPL token account data by hashing the account bytes.  
-They still do not verify against a global Solana state root.  
-Blacklist exclusion is still simplified in this demo.  
-Root updates require a configured root authority key so the on-chain root history stays in sync.
-We are actively working on the fixes listed below.
-
-## What is left and how we plan to finish it
-
-This is the straightforward plan to make the remaining proof modes production ready:
+## What is on the roadmap and how we plan to finish it
 
 1. **Real state roots**  
    Replace the placeholder roots with a real state root source and verify Merkle inclusion against it.

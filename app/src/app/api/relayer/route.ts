@@ -13,9 +13,6 @@ import {
     buildInstruction,
 } from './utils';
 
-// Relayer: backend wallet pays the fees for private swaps
-
-
 export async function POST(req: Request) {
     try {
         const body = await req.json();
